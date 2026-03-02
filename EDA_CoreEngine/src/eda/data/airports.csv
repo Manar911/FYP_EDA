@@ -1,0 +1,7 @@
+icao,name,lat,lon,runway_length_m,has_medical,has_rescue,approach_type,country
+OBBI,Bahrain International Airport,26.2708,50.6336,4000,1,1,ILS,BH
+OTHH,Hamad International Airport,25.2731,51.6081,4850,1,1,ILS,QA
+OMDB,Dubai International Airport,25.2532,55.3657,4000,1,1,ILS,AE
+OERK,King Khalid International Airport,24.9576,46.6988,4260,1,1,ILS,SA
+OKBK,Kuwait International Airport,29.2266,47.9689,3400,1,1,ILS,KW
+OOMS,Muscat International Airport,23.5933,58.2844,4000,1,1,ILS,OM
