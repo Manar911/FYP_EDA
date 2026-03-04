@@ -4,6 +4,7 @@ from eda.validation import validate_scenario, ScenarioValidationError
 from eda.features import haversine_km, runway_margin_m, compute_features
 from eda.filter import is_feasible
 from eda.ranking import rank_options
+from eda.pipeline import run_pipeline
 
 
 def test_smoke():
@@ -149,4 +150,23 @@ def test_rank_options_returns_top_k_sorted():
     assert ranked[0].score >= ranked[1].score
     assert ranked[0].airport.icao
 
-    
+def test_pipeline_returns_decision_report():
+    airports = load_airports()
+    a0 = airports[0]
+
+    s = Scenario(
+        aircraft_lat=a0.lat,
+        aircraft_lon=a0.lon,
+        required_runway_m=3000,
+        emergency_type=EmergencyType.FUEL,
+    )
+
+    report = run_pipeline(s, top_k=3, max_range_km=999999.0)
+
+    assert report.total_airports >= 1
+    assert len(report.evaluated) == report.total_airports
+    assert len(report.ranked_top) <= 3
+    # ranked options should have score + airport
+    if report.ranked_top:
+        assert report.ranked_top[0].airport.icao
+        assert isinstance(report.ranked_top[0].score, float)    
