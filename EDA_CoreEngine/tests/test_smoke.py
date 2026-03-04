@@ -3,6 +3,7 @@ from eda.scenario import Scenario, EmergencyType
 from eda.validation import validate_scenario, ScenarioValidationError
 from eda.features import haversine_km, runway_margin_m, compute_features
 from eda.filter import is_feasible
+from eda.ranking import rank_options
 
 
 def test_smoke():
@@ -125,3 +126,27 @@ def test_filter_accepts_feasible_airport():
     f = compute_features(s, a0)
     r = is_feasible(s, f, max_range_km=999999.0)
     assert r.feasible is True
+
+
+def test_rank_options_returns_top_k_sorted():
+    airports = load_airports()
+
+    s = Scenario(
+        aircraft_lat=airports[0].lat,
+        aircraft_lon=airports[0].lon,
+        required_runway_m=3000,
+        emergency_type=EmergencyType.FUEL,
+    )
+
+    options = []
+    for a in airports[:3]:
+        f = compute_features(s, a)
+        options.append((a, f))
+
+    ranked = rank_options(s.emergency_type, options, top_k=2)
+
+    assert len(ranked) == 2
+    assert ranked[0].score >= ranked[1].score
+    assert ranked[0].airport.icao
+
+    
