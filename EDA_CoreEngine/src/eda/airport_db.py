@@ -1,4 +1,16 @@
-# src/eda/airport_db.py
+"""
+airport_db.py
+
+Airport data loading and integrity validation for the EDA Core Engine (Increment 1).
+
+This module is responsible for:
+- Loading the packaged airport dataset (airports.csv)
+- Validating structural and data integrity constraints
+- Producing immutable Airport objects for deterministic processing
+
+The loader enforces strict schema, range, and uniqueness checks to prevent
+corrupted or unsafe data from entering the decision pipeline.
+"""
 from __future__ import annotations
 
 import csv
