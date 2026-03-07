@@ -5,6 +5,7 @@ from eda.features import haversine_km, runway_margin_m, compute_features
 from eda.filter import is_feasible
 from eda.ranking import rank_options
 from eda.pipeline import run_pipeline
+from eda.explanation import generate_explanation
 
 
 def test_smoke():
@@ -170,3 +171,22 @@ def test_pipeline_returns_decision_report():
     if report.ranked_top:
         assert report.ranked_top[0].airport.icao
         assert isinstance(report.ranked_top[0].score, float)    
+
+def test_generate_explanation_returns_reasons():
+    airports = load_airports()
+    a0 = airports[0]
+
+    s = Scenario(
+        aircraft_lat=a0.lat,
+        aircraft_lon=a0.lon,
+        required_runway_m=3000,
+        emergency_type=EmergencyType.MEDICAL,
+    )
+
+    f = compute_features(s, a0)
+    ranked = rank_options(s.emergency_type, [(a0, f)], top_k=1)
+
+    explanation = generate_explanation(ranked[0], s.emergency_type)
+
+    assert explanation.airport_icao == a0.icao
+    assert len(explanation.reasons) >= 1        
