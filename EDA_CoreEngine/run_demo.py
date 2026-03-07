@@ -6,12 +6,14 @@ Small demo runner for the EDA Core Engine (Increment 1).
 This script creates a sample Scenario, runs the pipeline, and prints:
 - Top K diversion airport options
 - Their score + key features
+- Their explanation reasons
 """
 
 from __future__ import annotations
 
 from eda.pipeline import run_pipeline
 from eda.scenario import Scenario, EmergencyType
+from eda.explanation import generate_explanation
 
 
 def main() -> None:
@@ -44,6 +46,7 @@ def main() -> None:
     for i, opt in enumerate(report.ranked_top, start=1):
         a = opt.airport
         f = opt.features
+        explanation = generate_explanation(opt, report.scenario.emergency_type)
 
         print()
         print(f"{i}. {a.icao} — {a.name} ({a.country})")
@@ -51,7 +54,10 @@ def main() -> None:
         print(f"   Distance: {f.distance_km:.1f} km")
         print(f"   Runway length: {a.runway_length_m} m")
         print(f"   Runway margin: {f.runway_margin_m:+d} m")
-        print(f"   Medical: {int(a.has_medical)} | Rescue: {int(a.has_rescue)}")
+        print(f"   Medical: {'Yes' if a.has_medical else 'No'} | Rescue: {'Yes' if a.has_rescue else 'No'}")
+        print("   Why this airport:")
+        for reason in explanation.reasons:
+            print(f"   • {reason}")
 
     print()
     print("=" * 60)
