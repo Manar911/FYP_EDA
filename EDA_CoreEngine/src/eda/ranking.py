@@ -21,6 +21,7 @@ from eda.airport_db import Airport
 from eda.features import EngineFeatures
 from eda.scenario import EmergencyType
 
+from eda.config import DISTANCE_WEIGHT, RUNWAY_WEIGHT, MEDICAL_BONUS, RESCUE_BONUS
 
 @dataclass(frozen=True)
 class RankedOption:
@@ -49,10 +50,10 @@ def score_airport(
     emergency_type: EmergencyType,
     features: EngineFeatures,
     *,
-    w_distance: float = 0.6,
-    w_runway: float = 0.4,
-    bonus_medical: float = 0.5,
-    bonus_rescue: float = 0.2,
+    w_distance: float = DISTANCE_WEIGHT,
+    w_runway: float = RUNWAY_WEIGHT,
+    bonus_medical: float = MEDICAL_BONUS,
+    bonus_rescue: float = RESCUE_BONUS,
 ) -> float:
     """
     Compute a deterministic baseline score from features.
