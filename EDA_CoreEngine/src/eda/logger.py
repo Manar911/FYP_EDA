@@ -69,17 +69,25 @@ def decision_report_to_dict(report: DecisionReport) -> dict[str, Any]:
         )
 
     return {
-        "scenario": {
-            "aircraft_lat": report.scenario.aircraft_lat,
-            "aircraft_lon": report.scenario.aircraft_lon,
-            "required_runway_m": report.scenario.required_runway_m,
-            "emergency_type": report.scenario.emergency_type.value,
-        },
-        "total_airports": report.total_airports,
-        "evaluated": evaluated,
-        "feasible": feasible,
-        "ranked_top": ranked_with_explanations,
-    }
+    "timestamp": datetime.now().isoformat(),
+
+    "scenario": {
+        "aircraft_lat": report.scenario.aircraft_lat,
+        "aircraft_lon": report.scenario.aircraft_lon,
+        "required_runway_m": report.scenario.required_runway_m,
+        "emergency_type": report.scenario.emergency_type.value,
+    },
+
+    "selected_option": ranked_with_explanations[0] if ranked_with_explanations else None,
+
+    "total_airports": report.total_airports,
+
+    "evaluated": evaluated,
+
+    "feasible": feasible,
+
+    "ranked_top": ranked_with_explanations,
+}
 
 
 def save_decision_report_json(
