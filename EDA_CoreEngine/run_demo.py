@@ -3,7 +3,8 @@ run_demo.py
 
 Small demo runner for the EDA Core Engine (Increment 1).
 
-This script creates a sample Scenario, runs the pipeline, and prints:
+This script creates a sample Scenario, runs the pipeline, saves a JSON
+decision log, and prints:
 - Top K diversion airport options
 - Their score + key features
 - Their explanation reasons
@@ -14,18 +15,20 @@ from __future__ import annotations
 from eda.pipeline import run_pipeline
 from eda.scenario import Scenario, EmergencyType
 from eda.explanation import generate_explanation
+from eda.logger import save_decision_report_json
 
 
 def main() -> None:
     # Demo scenario
     scenario = Scenario(
-        aircraft_lat=26.2708,        # Bahrain area example
+        aircraft_lat=26.2708,  # Bahrain area example
         aircraft_lon=50.6336,
         required_runway_m=3000,
         emergency_type=EmergencyType.FUEL,
     )
 
     report = run_pipeline(scenario)
+    log_path = save_decision_report_json(report)
 
     print("=" * 60)
     print("EDA Core Engine Demo (Increment 1)")
@@ -33,6 +36,7 @@ def main() -> None:
     print(f"Emergency: {report.scenario.emergency_type.value}")
     print(f"Aircraft position: ({report.scenario.aircraft_lat}, {report.scenario.aircraft_lon})")
     print(f"Required runway: {report.scenario.required_runway_m} m")
+    print(f"Decision log saved to: {log_path}")
     print("-" * 60)
     print(f"Total airports loaded: {report.total_airports}")
     print(f"Feasible airports: {len(report.feasible)}")
@@ -40,6 +44,7 @@ def main() -> None:
 
     if not report.ranked_top:
         print("No feasible diversion airports found under current constraints.")
+        print("=" * 60)
         return
 
     print("Top diversion options:")

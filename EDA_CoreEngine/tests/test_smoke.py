@@ -6,6 +6,7 @@ from eda.filter import is_feasible
 from eda.ranking import rank_options
 from eda.pipeline import run_pipeline
 from eda.explanation import generate_explanation
+from eda.logger import decision_report_to_dict
 
 
 def test_smoke():
@@ -189,4 +190,25 @@ def test_generate_explanation_returns_reasons():
     explanation = generate_explanation(ranked[0], s.emergency_type)
 
     assert explanation.airport_icao == a0.icao
-    assert len(explanation.reasons) >= 1        
+    assert len(explanation.reasons) >= 1       
+
+
+def test_decision_report_to_dict_contains_expected_keys():
+    airports = load_airports()
+    a0 = airports[0]
+
+    s = Scenario(
+        aircraft_lat=a0.lat,
+        aircraft_lon=a0.lon,
+        required_runway_m=3000,
+        emergency_type=EmergencyType.FUEL,
+    )
+
+    report = run_pipeline(s, top_k=3, max_range_km=999999.0)
+    data = decision_report_to_dict(report)
+
+    assert "scenario" in data
+    assert "total_airports" in data
+    assert "evaluated" in data
+    assert "feasible" in data
+    assert "ranked_top" in data

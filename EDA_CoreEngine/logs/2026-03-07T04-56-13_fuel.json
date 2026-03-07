@@ -1,0 +1,323 @@
+{
+  "scenario": {
+    "aircraft_lat": 26.2708,
+    "aircraft_lon": 50.6336,
+    "required_runway_m": 3000,
+    "emergency_type": "fuel"
+  },
+  "total_airports": 6,
+  "evaluated": [
+    {
+      "airport": {
+        "icao": "OBBI",
+        "name": "Bahrain International Airport",
+        "lat": 26.2708,
+        "lon": 50.6336,
+        "runway_length_m": 4000,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "BH"
+      },
+      "features": {
+        "distance_km": 0.0,
+        "runway_margin_m": 1000,
+        "has_medical": true,
+        "has_rescue": true
+      },
+      "feasibility": {
+        "feasible": true,
+        "reason": "Accepted"
+      }
+    },
+    {
+      "airport": {
+        "icao": "OTHH",
+        "name": "Hamad International Airport",
+        "lat": 25.2731,
+        "lon": 51.6081,
+        "runway_length_m": 4850,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "QA"
+      },
+      "features": {
+        "distance_km": 147.74683004031004,
+        "runway_margin_m": 1850,
+        "has_medical": true,
+        "has_rescue": true
+      },
+      "feasibility": {
+        "feasible": true,
+        "reason": "Accepted"
+      }
+    },
+    {
+      "airport": {
+        "icao": "OMDB",
+        "name": "Dubai International Airport",
+        "lat": 25.2532,
+        "lon": 55.3657,
+        "runway_length_m": 4000,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "AE"
+      },
+      "features": {
+        "distance_km": 487.17307219217594,
+        "runway_margin_m": 1000,
+        "has_medical": true,
+        "has_rescue": true
+      },
+      "feasibility": {
+        "feasible": true,
+        "reason": "Accepted"
+      }
+    },
+    {
+      "airport": {
+        "icao": "OERK",
+        "name": "King Khalid International Airport",
+        "lat": 24.9576,
+        "lon": 46.6988,
+        "runway_length_m": 4260,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "SA"
+      },
+      "features": {
+        "distance_km": 420.6596301922878,
+        "runway_margin_m": 1260,
+        "has_medical": true,
+        "has_rescue": true
+      },
+      "feasibility": {
+        "feasible": true,
+        "reason": "Accepted"
+      }
+    },
+    {
+      "airport": {
+        "icao": "OKBK",
+        "name": "Kuwait International Airport",
+        "lat": 29.2266,
+        "lon": 47.9689,
+        "runway_length_m": 3400,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "KW"
+      },
+      "features": {
+        "distance_km": 420.4233513156619,
+        "runway_margin_m": 400,
+        "has_medical": true,
+        "has_rescue": true
+      },
+      "feasibility": {
+        "feasible": true,
+        "reason": "Accepted"
+      }
+    },
+    {
+      "airport": {
+        "icao": "OOMS",
+        "name": "Muscat International Airport",
+        "lat": 23.5933,
+        "lon": 58.2844,
+        "runway_length_m": 4000,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "OM"
+      },
+      "features": {
+        "distance_km": 826.702936993927,
+        "runway_margin_m": 1000,
+        "has_medical": true,
+        "has_rescue": true
+      },
+      "feasibility": {
+        "feasible": false,
+        "reason": "Rejected: unreachable (> 800.0 km)"
+      }
+    }
+  ],
+  "feasible": [
+    {
+      "airport": {
+        "icao": "OBBI",
+        "name": "Bahrain International Airport",
+        "lat": 26.2708,
+        "lon": 50.6336,
+        "runway_length_m": 4000,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "BH"
+      },
+      "features": {
+        "distance_km": 0.0,
+        "runway_margin_m": 1000,
+        "has_medical": true,
+        "has_rescue": true
+      }
+    },
+    {
+      "airport": {
+        "icao": "OTHH",
+        "name": "Hamad International Airport",
+        "lat": 25.2731,
+        "lon": 51.6081,
+        "runway_length_m": 4850,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "QA"
+      },
+      "features": {
+        "distance_km": 147.74683004031004,
+        "runway_margin_m": 1850,
+        "has_medical": true,
+        "has_rescue": true
+      }
+    },
+    {
+      "airport": {
+        "icao": "OMDB",
+        "name": "Dubai International Airport",
+        "lat": 25.2532,
+        "lon": 55.3657,
+        "runway_length_m": 4000,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "AE"
+      },
+      "features": {
+        "distance_km": 487.17307219217594,
+        "runway_margin_m": 1000,
+        "has_medical": true,
+        "has_rescue": true
+      }
+    },
+    {
+      "airport": {
+        "icao": "OERK",
+        "name": "King Khalid International Airport",
+        "lat": 24.9576,
+        "lon": 46.6988,
+        "runway_length_m": 4260,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "SA"
+      },
+      "features": {
+        "distance_km": 420.6596301922878,
+        "runway_margin_m": 1260,
+        "has_medical": true,
+        "has_rescue": true
+      }
+    },
+    {
+      "airport": {
+        "icao": "OKBK",
+        "name": "Kuwait International Airport",
+        "lat": 29.2266,
+        "lon": 47.9689,
+        "runway_length_m": 3400,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "KW"
+      },
+      "features": {
+        "distance_km": 420.4233513156619,
+        "runway_margin_m": 400,
+        "has_medical": true,
+        "has_rescue": true
+      }
+    }
+  ],
+  "ranked_top": [
+    {
+      "airport": {
+        "icao": "OBBI",
+        "name": "Bahrain International Airport",
+        "lat": 26.2708,
+        "lon": 50.6336,
+        "runway_length_m": 4000,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "BH"
+      },
+      "features": {
+        "distance_km": 0.0,
+        "runway_margin_m": 1000,
+        "has_medical": true,
+        "has_rescue": true
+      },
+      "score": 1.2,
+      "explanation": [
+        "Very close to the aircraft position",
+        "Runway margin available: +1000 m",
+        "Rescue capability available"
+      ]
+    },
+    {
+      "airport": {
+        "icao": "OTHH",
+        "name": "Hamad International Airport",
+        "lat": 25.2731,
+        "lon": 51.6081,
+        "runway_length_m": 4850,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "QA"
+      },
+      "features": {
+        "distance_km": 147.74683004031004,
+        "runway_margin_m": 1850,
+        "has_medical": true,
+        "has_rescue": true
+      },
+      "score": 0.9440336994061482,
+      "explanation": [
+        "Relatively close diversion option",
+        "Runway exceeds requirement by 1850 m",
+        "Rescue capability available"
+      ]
+    },
+    {
+      "airport": {
+        "icao": "OERK",
+        "name": "King Khalid International Airport",
+        "lat": 24.9576,
+        "lon": 46.6988,
+        "runway_length_m": 4260,
+        "has_medical": true,
+        "has_rescue": true,
+        "approach_type": "ILS",
+        "country": "SA"
+      },
+      "features": {
+        "distance_km": 420.6596301922878,
+        "runway_margin_m": 1260,
+        "has_medical": true,
+        "has_rescue": true
+      },
+      "score": 0.7054229486463439,
+      "explanation": [
+        "Feasible diversion option within range",
+        "Runway margin available: +1260 m",
+        "Rescue capability available"
+      ]
+    }
+  ]
+}
