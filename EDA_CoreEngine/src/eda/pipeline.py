@@ -23,9 +23,12 @@ from eda.validation import validate_scenario
 
 from eda.config import DEFAULT_TOP_K, DEFAULT_MAX_RANGE_KM
 
+from eda.operational_constraints import OperationalConstraints
+
 def run_pipeline(
     scenario: Scenario,
     *,
+    constraints: OperationalConstraints | None = None,
     top_k: int = DEFAULT_TOP_K,
     max_range_km: float = DEFAULT_MAX_RANGE_KM,
 ) -> DecisionReport:
@@ -42,6 +45,9 @@ def run_pipeline(
     """
     # 1) System-level validation
     validate_scenario(scenario)
+
+    if constraints is None:
+        constraints = OperationalConstraints()    
 
     # 2) Load airport candidates
     airports = load_airports()
