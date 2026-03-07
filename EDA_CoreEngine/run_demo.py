@@ -23,11 +23,7 @@ def main() -> None:
         emergency_type=EmergencyType.FUEL,
     )
 
-    report = run_pipeline(
-        scenario,
-        top_k=3,
-        max_range_km=800.0,  # Increment 1 assumption (tune for demo)
-    )
+    report = run_pipeline(scenario)
 
     print("=" * 60)
     print("EDA Core Engine Demo (Increment 1)")

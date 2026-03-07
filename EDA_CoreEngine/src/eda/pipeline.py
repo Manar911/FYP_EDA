@@ -21,12 +21,13 @@ from eda.ranking import rank_options
 from eda.scenario import Scenario
 from eda.validation import validate_scenario
 
+from eda.config import DEFAULT_TOP_K, DEFAULT_MAX_RANGE_KM
 
 def run_pipeline(
     scenario: Scenario,
     *,
-    top_k: int = 3,
-    max_range_km: float = 800.0,
+    top_k: int = DEFAULT_TOP_K,
+    max_range_km: float = DEFAULT_MAX_RANGE_KM,
 ) -> DecisionReport:
     """
     Runs the Increment 1 deterministic decision pipeline.
