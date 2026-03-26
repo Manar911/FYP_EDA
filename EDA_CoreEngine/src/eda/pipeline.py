@@ -20,10 +20,9 @@ from eda.models import DecisionReport, EvaluatedAirport
 from eda.ranking import rank_options
 from eda.scenario import Scenario
 from eda.validation import validate_scenario
-
 from eda.config import DEFAULT_TOP_K, DEFAULT_MAX_RANGE_KM
-
 from eda.operational_constraints import OperationalConstraints
+
 
 def run_pipeline(
     scenario: Scenario,
@@ -33,12 +32,13 @@ def run_pipeline(
     max_range_km: float = DEFAULT_MAX_RANGE_KM,
 ) -> DecisionReport:
     """
-    Runs the Increment 1 deterministic decision pipeline.
+    Runs the deterministic decision pipeline.
 
     Args:
         scenario: Scenario input.
-        top_k: number of top airports to return.
-        max_range_km: simplified reachability assumption (Increment 1).
+        constraints: Optional scenario-specific operational overrides.
+        top_k: Number of top airports to return.
+        max_range_km: Simplified reachability assumption.
 
     Returns:
         DecisionReport containing evaluated airports, feasible set, and top ranked outputs.
@@ -47,7 +47,7 @@ def run_pipeline(
     validate_scenario(scenario)
 
     if constraints is None:
-        constraints = OperationalConstraints()    
+        constraints = OperationalConstraints()
 
     # 2) Load airport candidates
     airports = load_airports()
@@ -58,15 +58,31 @@ def run_pipeline(
     # 3) Evaluate each airport
     for a in airports:
         feats = compute_features(scenario, a)
-        feas = is_feasible(scenario, feats, max_range_km=max_range_km)
+        feas = is_feasible(
+            scenario,
+            a,
+            feats,
+            constraints=constraints,
+            max_range_km=max_range_km,
+        )
 
-        evaluated.append(EvaluatedAirport(airport=a, features=feats, feasibility=feas))
+        evaluated.append(
+            EvaluatedAirport(
+                airport=a,
+                features=feats,
+                feasibility=feas,
+            )
+        )
 
         if feas.feasible:
             feasible_pairs.append((a, feats))
 
-    # 4) Rank feasible airports (top_k)
-    ranked_top = rank_options(scenario.emergency_type, feasible_pairs, top_k=top_k)
+    # 4) Rank feasible airports
+    ranked_top = rank_options(
+        scenario.emergency_type,
+        feasible_pairs,
+        top_k=top_k,
+    )
 
     return DecisionReport(
         scenario=scenario,
