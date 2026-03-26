@@ -12,6 +12,7 @@ decision log, and prints:
 
 from __future__ import annotations
 
+from eda.airport_db import load_airports
 from eda.pipeline import run_pipeline
 from eda.scenario import Scenario, EmergencyType
 from eda.explanation import generate_explanation
@@ -19,6 +20,9 @@ from eda.logger import save_decision_report_json
 
 
 def main() -> None:
+    airports = load_airports()
+    print(f"Loaded airports: {len(airports)}")
+
     # Demo scenario
     scenario = Scenario(
         aircraft_lat=26.2708,  # Bahrain area example

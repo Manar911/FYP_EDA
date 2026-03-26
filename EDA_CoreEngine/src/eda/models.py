@@ -5,7 +5,7 @@ Shared data models for the EDA Core Engine (Increment 1).
 
 These models represent the outputs of pipeline stages in a structured way.
 They are designed to support:
-- traceability (viva-friendly)
+- traceability
 - unit testing
 - future logging (Increment 1)
 - future ML dataset generation (Increment 2)
