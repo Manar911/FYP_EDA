@@ -95,7 +95,7 @@ def test_filter_rejects_unreachable_airport():
     f = compute_features(s, a0)
 
     # force reject even if distance ~ 0
-    r = is_feasible(s, f, max_range_km=-1.0)
+    r = is_feasible(s, a0, f, max_range_km=-1.0)
     assert r.feasible is False
 
 
@@ -111,7 +111,7 @@ def test_filter_rejects_short_runway():
     )
 
     f = compute_features(s, a0)
-    r = is_feasible(s, f, max_range_km=999999.0)  # ensure range doesn't reject first
+    r = is_feasible(s, a0, f, max_range_km=999999.0)  # ensure range doesn't reject first
     assert r.feasible is False
     assert "runway" in r.reason.lower()
 
@@ -128,7 +128,7 @@ def test_filter_accepts_feasible_airport():
     )
 
     f = compute_features(s, a0)
-    r = is_feasible(s, f, max_range_km=999999.0)
+    r = is_feasible(s, a0, f, max_range_km=999999.0)
     assert r.feasible is True
 
 
@@ -153,6 +153,7 @@ def test_rank_options_returns_top_k_sorted():
     assert ranked[0].score >= ranked[1].score
     assert ranked[0].airport.icao
 
+
 def test_pipeline_returns_decision_report():
     airports = load_airports()
     a0 = airports[0]
@@ -172,7 +173,8 @@ def test_pipeline_returns_decision_report():
     # ranked options should have score + airport
     if report.ranked_top:
         assert report.ranked_top[0].airport.icao
-        assert isinstance(report.ranked_top[0].score, float)    
+        assert isinstance(report.ranked_top[0].score, float)
+
 
 def test_generate_explanation_returns_reasons():
     airports = load_airports()
@@ -191,7 +193,7 @@ def test_generate_explanation_returns_reasons():
     explanation = generate_explanation(ranked[0], s.emergency_type)
 
     assert explanation.airport_icao == a0.icao
-    assert len(explanation.reasons) >= 1       
+    assert len(explanation.reasons) >= 1
 
 
 def test_decision_report_to_dict_contains_expected_keys():
@@ -229,4 +231,4 @@ def test_pipeline_accepts_empty_operational_constraints():
     constraints = OperationalConstraints()
     report = run_pipeline(s, constraints=constraints, top_k=3, max_range_km=999999.0)
 
-    assert report.total_airports >= 1    
+    assert report.total_airports >= 1
