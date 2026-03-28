@@ -110,13 +110,13 @@ NON_CRITICAL_EMERGENCIES = {
 }
 
 EMERGENCY_RANGE_KM = {
-    "fuel": (150, 500),
-    "medical": (200, 800),
-    "technical": (200, 700),
-    "mechanical": (200, 700),
-    "security": (200, 900),
-    "weather": (300, 1000),
-    "operational_constraints": (300, 900),
+    "fuel": (200, 650),
+    "medical": (250, 850),
+    "technical": (300, 900),
+    "mechanical": (300, 900),
+    "security": (300, 950),
+    "weather": (350, 1000),
+    "operational_constraints": (350, 950),
 }
 
 
@@ -363,13 +363,27 @@ def _choose_emergency_type(rng: random.Random, template: str) -> str:
 
 
 def _choose_required_runway_m(profile: AircraftProfile, rng: random.Random, template: str) -> int:
+    span = profile.runway_max_m - profile.runway_min_m
+
     if template == "tight_runway":
-        # Push requirement toward the upper end to create harder scenarios.
-        low = int(profile.runway_min_m + 0.60 * (profile.runway_max_m - profile.runway_min_m))
-        high = profile.runway_max_m
+        # Still hard, but not always near-extreme.
+        low = int(profile.runway_min_m + 0.45 * span)
+        high = int(profile.runway_min_m + 0.85 * span)
         return rng.randint(low, high)
 
-    return rng.randint(profile.runway_min_m, profile.runway_max_m)
+    if template == "competitive":
+        # Mid-range values help produce multiple feasible competitors.
+        low = int(profile.runway_min_m + 0.25 * span)
+        high = int(profile.runway_min_m + 0.65 * span)
+        return rng.randint(low, high)
+
+    if template == "short_range":
+        # Slightly easier runway requirement to avoid double-hard scenarios.
+        low = profile.runway_min_m
+        high = int(profile.runway_min_m + 0.55 * span)
+        return rng.randint(low, high)
+
+    return rng.randint(profile.runway_min_m, int(profile.runway_min_m + 0.75 * span))
 
 
 def _choose_max_range_km(emergency_type: str, rng: random.Random, template: str) -> int:
@@ -406,16 +420,19 @@ def _choose_seed_airport(airports: List[AirportRow], rng: random.Random) -> Airp
 
 def _choose_aircraft_position(seed_airport: AirportRow, rng: random.Random, template: str) -> tuple[float, float]:
     """
-    Generate aircraft within 50–600 km of the seed airport.
+    Generate aircraft within a realistic radius of the seed airport.
+    Tuned to improve feasible-airport density without becoming unrealistic.
     """
     if template == "short_range":
-        radius_km = rng.uniform(50, 220)
+        radius_km = rng.uniform(50, 180)
     elif template == "competitive":
-        radius_km = rng.uniform(120, 350)
+        radius_km = rng.uniform(80, 250)
     elif template == "critical_pressure":
-        radius_km = rng.uniform(100, 500)
+        radius_km = rng.uniform(80, 320)
+    elif template == "tight_runway":
+        radius_km = rng.uniform(70, 280)
     else:
-        radius_km = rng.uniform(50, 600)
+        radius_km = rng.uniform(50, 350)
 
     bearing_deg = rng.uniform(0, 360)
     return _destination_point(seed_airport.lat, seed_airport.lon, radius_km, bearing_deg)
@@ -435,7 +452,7 @@ class ScenarioGenerator:
 
     Core realism rules:
     - chooses a real airport first
-    - places aircraft 50–600 km around it
+    - places aircraft near that airport within a controlled radius
     - aircraft type chosen before runway requirement
     - max_range_km depends on emergency type
     """
@@ -498,8 +515,7 @@ class ScenarioGenerator:
         """
         Generate multiple scenarios.
 
-        If templates is provided, it should contain one template per scenario,
-        or fewer templates that you intentionally cycle externally.
+        If templates is provided, it should contain one template per scenario.
         """
         if count <= 0:
             raise ValueError("count must be > 0")

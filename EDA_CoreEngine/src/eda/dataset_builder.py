@@ -23,9 +23,8 @@ from __future__ import annotations
 
 import csv
 import random
-from dataclasses import asdict
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence
+from typing import Dict, List, Sequence
 
 from eda.models import DecisionReport
 from eda.pipeline import run_pipeline
@@ -388,15 +387,19 @@ def build_dataset(
     """
     Build a full leakage-safe row-level dataset.
 
-    Returns:
-        List of row dictionaries.
+    Only scenarios with at least one feasible airport are accepted.
+    The builder keeps generating until it collects exactly scenario_count
+    valid scenarios.
     """
     generator = ScenarioGenerator(seed=scenario_seed)
-    generated_scenarios = generator.generate_many(count=scenario_count, start_index=1)
 
     all_rows: List[dict] = []
+    accepted_scenarios = 0
+    scenario_index = 1
 
-    for generated in generated_scenarios:
+    while accepted_scenarios < scenario_count:
+        generated = generator.generate_one(scenario_index)
+
         runtime_scenario = _generated_to_runtime_scenario(generated)
 
         report = run_pipeline(
@@ -405,8 +408,16 @@ def build_dataset(
             max_range_km=float(generated.max_range_km),
         )
 
+        # Reject scenarios that produce no feasible airports.
+        if len(report.feasible) == 0:
+            scenario_index += 1
+            continue
+
         scenario_rows = _build_rows_for_scenario(generated, report)
         all_rows.extend(scenario_rows)
+
+        accepted_scenarios += 1
+        scenario_index += 1
 
     _assign_split_labels(all_rows, split_seed=split_seed)
     validate_no_leakage(all_rows)
