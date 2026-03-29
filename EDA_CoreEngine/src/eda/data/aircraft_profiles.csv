@@ -1,0 +1,18 @@
+aircraft_type,aircraft_category,operator_class,runway_min_m,runway_max_m,nominal_diversion_capability_km,nominal_endurance_minutes,selection_weight
+E170,regional_jet,civilian_commercial,1600,2000,700,150,8
+E175,regional_jet,civilian_commercial,1700,2050,750,160,9
+E190,regional_jet,civilian_commercial,1800,2150,800,170,9
+CRJ900,regional_jet,civilian_commercial,1700,2100,700,150,7
+A220-300,narrow_body,civilian_commercial,2000,2350,950,190,7
+A319,narrow_body,civilian_commercial,2000,2350,900,185,6
+A320,narrow_body,civilian_commercial,2200,2600,950,190,12
+A321,narrow_body,civilian_commercial,2300,2700,1000,200,10
+B737-800,narrow_body,civilian_commercial,2200,2600,950,190,12
+B737 MAX 8,narrow_body,civilian_commercial,2300,2650,1000,200,8
+A330-300,wide_body,civilian_commercial,2800,3300,1300,250,6
+A350-900,wide_body,civilian_commercial,2800,3300,1500,280,5
+B767-300ER,wide_body,civilian_commercial,2900,3300,1250,240,4
+B777-300ER,wide_body,civilian_commercial,3000,3600,1500,280,5
+B787-9,wide_body,civilian_commercial,2700,3200,1400,260,5
+A380-800,very_large,civilian_commercial,3400,4000,1600,300,2
+B747-8,very_large,civilian_commercial,3400,3900,1550,290,2
