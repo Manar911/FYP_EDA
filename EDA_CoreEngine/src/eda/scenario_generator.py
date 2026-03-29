@@ -5,7 +5,8 @@ Scenario generation for Increment 2 dataset construction in the EDA Core Engine.
 
 This module is responsible for:
 - Generating realistic emergency diversion scenarios for supervised learning
-- Selecting aircraft profiles and deriving runway requirements in a logically consistent order
+- Selecting aircraft profiles from the aircraft database and deriving runway requirements
+  in a logically consistent order
 - Assigning emergency types and diversion range limits according to defined generation policy
 - Placing aircraft positions near real airports to preserve geographic plausibility
 - Producing structured scenario records for downstream evaluation by the deterministic pipeline
@@ -24,52 +25,7 @@ from dataclasses import dataclass, asdict
 from importlib import resources
 from typing import Iterable, List, Optional
 
-
-# ============================================================
-# Aircraft policy
-# ============================================================
-
-@dataclass(frozen=True)
-class AircraftProfile:
-    aircraft_type: str
-    aircraft_category: str
-    runway_min_m: int
-    runway_max_m: int
-
-
-AIRCRAFT_PROFILES: List[AircraftProfile] = [
-    # Regional jets
-    AircraftProfile("E170", "regional_jet", 1600, 2000),
-    AircraftProfile("E175", "regional_jet", 1700, 2050),
-    AircraftProfile("E190", "regional_jet", 1800, 2150),
-    AircraftProfile("CRJ900", "regional_jet", 1700, 2100),
-
-    # Narrow-body
-    AircraftProfile("A220-300", "narrow_body", 2000, 2350),
-    AircraftProfile("A319", "narrow_body", 2000, 2350),
-    AircraftProfile("A320", "narrow_body", 2200, 2600),
-    AircraftProfile("A321", "narrow_body", 2300, 2700),
-    AircraftProfile("B737-800", "narrow_body", 2200, 2600),
-    AircraftProfile("B737 MAX 8", "narrow_body", 2300, 2650),
-
-    # Wide-body
-    AircraftProfile("A330-300", "wide_body", 2600, 3100),
-    AircraftProfile("A350-900", "wide_body", 2800, 3300),
-    AircraftProfile("B767-300ER", "wide_body", 2600, 3050),
-    AircraftProfile("B777-300ER", "wide_body", 2800, 3400),
-    AircraftProfile("B787-9", "wide_body", 2700, 3200),
-
-    # Very large
-    AircraftProfile("A380-800", "very_large", 3200, 3800),
-    AircraftProfile("B747-8", "very_large", 3200, 3700),
-]
-
-CATEGORY_WEIGHTS = {
-    "regional_jet": 0.20,
-    "narrow_body": 0.45,
-    "wide_body": 0.28,
-    "very_large": 0.07,
-}
+from eda.aircraft_db import AircraftProfile, load_aircraft_profiles
 
 
 # ============================================================
@@ -335,23 +291,29 @@ def _weighted_choice(items: List[str], weights_map: dict[str, float], rng: rando
     return rng.choices(items, weights=weights, k=1)[0]
 
 
-def _choose_aircraft_profile(rng: random.Random, template: str) -> AircraftProfile:
+def _choose_aircraft_profile(
+    aircraft_profiles: List[AircraftProfile],
+    rng: random.Random,
+    template: str,
+) -> AircraftProfile:
     """
-    Template can bias aircraft selection to improve dataset variation.
+    Select an aircraft profile from the aircraft DB, optionally biased by template.
+    Uses the CSV-backed selection_weight field for realism.
     """
     if template == "tight_runway":
-        preferred_categories = ["wide_body", "very_large", "narrow_body"]
-        preferred_weights = [0.40, 0.25, 0.35]
-        chosen_category = rng.choices(preferred_categories, weights=preferred_weights, k=1)[0]
+        allowed_categories = {"narrow_body", "wide_body", "very_large"}
+        candidates = [p for p in aircraft_profiles if p.aircraft_category in allowed_categories]
     elif template == "short_range":
-        preferred_categories = ["regional_jet", "narrow_body", "wide_body"]
-        preferred_weights = [0.35, 0.45, 0.20]
-        chosen_category = rng.choices(preferred_categories, weights=preferred_weights, k=1)[0]
+        allowed_categories = {"regional_jet", "narrow_body", "wide_body"}
+        candidates = [p for p in aircraft_profiles if p.aircraft_category in allowed_categories]
     else:
-        chosen_category = _weighted_choice(list(CATEGORY_WEIGHTS.keys()), CATEGORY_WEIGHTS, rng)
+        candidates = list(aircraft_profiles)
 
-    candidates = [p for p in AIRCRAFT_PROFILES if p.aircraft_category == chosen_category]
-    return rng.choice(candidates)
+    if not candidates:
+        raise ValueError("No aircraft profiles available after template filtering.")
+
+    weights = [p.selection_weight for p in candidates]
+    return rng.choices(candidates, weights=weights, k=1)[0]
 
 
 def _choose_emergency_type(rng: random.Random, template: str) -> str:
@@ -448,11 +410,12 @@ def _choose_template(rng: random.Random) -> str:
 
 class ScenarioGenerator:
     """
-    Generates realistic diversion scenarios using your airport DB.
+    Generates realistic diversion scenarios using your airport DB and aircraft DB.
 
     Core realism rules:
     - chooses a real airport first
     - places aircraft near that airport within a controlled radius
+    - selects aircraft from the structured aircraft database
     - aircraft type chosen before runway requirement
     - max_range_km depends on emergency type
     """
@@ -460,9 +423,11 @@ class ScenarioGenerator:
     def __init__(
         self,
         airports: Optional[List[AirportRow]] = None,
+        aircraft_profiles: Optional[List[AircraftProfile]] = None,
         seed: Optional[int] = None,
     ) -> None:
         self.airports = airports if airports is not None else _read_airports_from_package_csv()
+        self.aircraft_profiles = aircraft_profiles if aircraft_profiles is not None else load_aircraft_profiles()
         self.rng = random.Random(seed)
 
     def generate_one(
@@ -488,7 +453,7 @@ class ScenarioGenerator:
             raise ValueError(f"Unknown template '{chosen_template}'. Must be one of {SCENARIO_TEMPLATES}.")
 
         seed_airport = _choose_seed_airport(self.airports, self.rng)
-        aircraft_profile = _choose_aircraft_profile(self.rng, chosen_template)
+        aircraft_profile = _choose_aircraft_profile(self.aircraft_profiles, self.rng, chosen_template)
         emergency_type = _choose_emergency_type(self.rng, chosen_template)
         required_runway_m = _choose_required_runway_m(aircraft_profile, self.rng, chosen_template)
         max_range_km = _choose_max_range_km(emergency_type, self.rng, chosen_template)

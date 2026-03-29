@@ -1,7 +1,7 @@
+from eda.aircraft_db import load_aircraft_profiles
 from eda.scenario_generator import (
     ScenarioGenerator,
     GeneratedScenario,
-    AIRCRAFT_PROFILES,
     EMERGENCY_RANGE_KM,
     CRITICAL_EMERGENCIES,
     NON_CRITICAL_EMERGENCIES,
@@ -28,8 +28,10 @@ def test_generate_one_uses_valid_aircraft_profile():
     generator = ScenarioGenerator(seed=42)
     scenario = generator.generate_one(scenario_index=1)
 
+    aircraft_profiles = load_aircraft_profiles()
+
     matching_profiles = [
-        p for p in AIRCRAFT_PROFILES
+        p for p in aircraft_profiles
         if p.aircraft_type == scenario.aircraft_type
         and p.aircraft_category == scenario.aircraft_category
     ]
@@ -41,8 +43,10 @@ def test_required_runway_is_within_selected_aircraft_policy():
     generator = ScenarioGenerator(seed=42)
     scenario = generator.generate_one(scenario_index=1)
 
+    aircraft_profiles = load_aircraft_profiles()
+
     profile = next(
-        p for p in AIRCRAFT_PROFILES
+        p for p in aircraft_profiles
         if p.aircraft_type == scenario.aircraft_type
         and p.aircraft_category == scenario.aircraft_category
     )
@@ -59,8 +63,6 @@ def test_emergency_type_is_valid():
 
 def test_max_range_matches_emergency_policy():
     generator = ScenarioGenerator(seed=42)
-
-    # Generate multiple scenarios to cover variation
     scenarios = generator.generate_many(count=20, start_index=1)
 
     for scenario in scenarios:
