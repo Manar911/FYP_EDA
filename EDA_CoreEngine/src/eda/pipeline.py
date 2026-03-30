@@ -1,12 +1,19 @@
 """
 pipeline.py
 
-End-to-end deterministic pipeline for the EDA Core Engine (Increment 1).
+End-to-end deterministic pipeline for the EDA Core Engine.
 
 This module connects:
 Scenario → Validation → Airport DB → Feature Engineering → Feasibility Filter → Ranking
 
 It returns a DecisionReport, which is traceable and suitable for logging.
+
+Increment 2 update:
+- The redesigned distance model is carried inside Scenario.
+- Feasible airports now include a distance-zone label:
+    * preferred
+    * extended
+- Ranking uses that distance zone to apply a soft last-resort penalty.
 """
 
 from __future__ import annotations
@@ -38,7 +45,9 @@ def run_pipeline(
         scenario: Scenario input.
         constraints: Optional scenario-specific operational overrides.
         top_k: Number of top airports to return.
-        max_range_km: Simplified reachability assumption.
+        max_range_km: Legacy compatibility parameter from Increment 1.
+            It is no longer the final reachability authority once Scenario
+            carries the redesigned range model.
 
     Returns:
         DecisionReport containing evaluated airports, feasible set, and top ranked outputs.
@@ -53,7 +62,7 @@ def run_pipeline(
     airports = load_airports()
 
     evaluated: List[EvaluatedAirport] = []
-    feasible_pairs: List[Tuple[Airport, EngineFeatures]] = []
+    feasible_pairs: List[Tuple[Airport, EngineFeatures, str]] = []
 
     # 3) Evaluate each airport
     for a in airports:
@@ -63,7 +72,7 @@ def run_pipeline(
             a,
             feats,
             constraints=constraints,
-            max_range_km=max_range_km,
+            max_range_km=max_range_km,  # legacy compatibility only
         )
 
         evaluated.append(
@@ -75,7 +84,7 @@ def run_pipeline(
         )
 
         if feas.feasible:
-            feasible_pairs.append((a, feats))
+            feasible_pairs.append((a, feats, feas.zone))
 
     # 4) Rank feasible airports
     ranked_top = rank_options(

@@ -2,21 +2,6 @@
 dataset_builder.py
 
 ML dataset construction for Increment 2 of the EDA Core Engine.
-
-This module is responsible for:
-- Generating realistic diversion scenarios using scenario_generator.py
-- Converting generated scenarios into the real Scenario input model
-- Running the real deterministic pipeline for each scenario
-- Building one dataset row per (scenario, airport) evaluation
-- Assigning labels from the same deterministic ranking logic used by the system
-- Splitting data into train/validation/test sets using scenario_id only
-
-Leakage prevention rule:
-- Rows must NEVER be split randomly.
-- All rows produced from the same scenario_id must stay in exactly one split.
-
-This ensures that ML training, validation, and testing remain realistic and
-do not leak information between sets.
 """
 
 from __future__ import annotations
@@ -29,16 +14,11 @@ from typing import Dict, List, Sequence
 from eda.models import DecisionReport
 from eda.pipeline import run_pipeline
 from eda.ranking import rank_options
-from eda.scenario import EmergencyType, Scenario
+from eda.scenario import EmergencyType, Scenario, FuelState, BindingSide
 from eda.scenario_generator import GeneratedScenario, ScenarioGenerator
 
 
-# ============================================================
-# Dataset output column order
-# ============================================================
-
 DATASET_COLUMNS = [
-    # Scenario columns
     "scenario_id",
     "seed_airport_icao",
     "aircraft_lat",
@@ -48,15 +28,17 @@ DATASET_COLUMNS = [
     "required_runway_m",
     "emergency_type",
     "max_range_km",
-
-    # Airport columns
+    "fuel_state",
+    "fuel_multiplier",
+    "aircraft_adjusted_range_km",
+    "usable_range_km",
+    "extended_range_km",
+    "binding_side",
     "airport_icao",
     "airport_iata",
     "airport_name",
     "airport_city",
     "airport_country",
-
-    # Capabilities / airport properties
     "runway_length_m",
     "runway_width_m",
     "surface_type",
@@ -78,52 +60,42 @@ DATASET_COLUMNS = [
     "unsafe_status",
     "civil_military",
     "slot_restricted",
-
-    # Engineered features
     "distance_km",
     "runway_margin_m",
     "feasible",
     "feasibility_reason",
-
-    # Labels
+    "distance_zone",
     "baseline_score",
     "target_rank",
     "is_top_choice",
-
-    # Split
     "split",
 ]
 
-
-# ============================================================
-# Helpers
-# ============================================================
 
 def _bool_to_int(value: bool) -> int:
     return 1 if bool(value) else 0
 
 
 def _generated_to_runtime_scenario(g: GeneratedScenario) -> Scenario:
-    """
-    Convert GeneratedScenario into the real runtime Scenario model.
-    """
     return Scenario(
         aircraft_lat=g.aircraft_lat,
         aircraft_lon=g.aircraft_lon,
         required_runway_m=g.required_runway_m,
         emergency_type=EmergencyType(g.emergency_type),
+        aircraft_type=g.aircraft_type,
+        fuel_state=FuelState(g.fuel_state),
+        fuel_multiplier=g.fuel_multiplier,
+        max_range_km=g.max_range_km,
+        aircraft_adjusted_range_km=g.aircraft_adjusted_range_km,
+        usable_range_km=g.usable_range_km,
+        extended_range_km=g.extended_range_km,
+        binding_side=BindingSide(g.binding_side),
     )
 
 
-def _build_rank_maps(report: DecisionReport) -> tuple[Dict[str, float], Dict[str, int], Dict[str, int]]:
-    """
-    Rank ALL feasible airports using the real ranking logic.
-
-    Returns:
-        score_map: airport_icao -> baseline_score
-        rank_map: airport_icao -> target_rank (1-based)
-        top_choice_map: airport_icao -> 1 if best airport else 0
-    """
+def _build_rank_maps(
+    report: DecisionReport,
+) -> tuple[Dict[str, float], Dict[str, int], Dict[str, int]]:
     full_ranked = rank_options(
         report.scenario.emergency_type,
         report.feasible,
@@ -147,9 +119,6 @@ def _build_rows_for_scenario(
     generated: GeneratedScenario,
     report: DecisionReport,
 ) -> List[dict]:
-    """
-    Build one row per evaluated airport for a single scenario.
-    """
     score_map, rank_map, top_choice_map = _build_rank_maps(report)
 
     rows: List[dict] = []
@@ -162,7 +131,6 @@ def _build_rows_for_scenario(
         icao = airport.icao
 
         row = {
-            # Scenario columns
             "scenario_id": generated.scenario_id,
             "seed_airport_icao": generated.seed_airport_icao,
             "aircraft_lat": generated.aircraft_lat,
@@ -172,15 +140,17 @@ def _build_rows_for_scenario(
             "required_runway_m": generated.required_runway_m,
             "emergency_type": generated.emergency_type,
             "max_range_km": generated.max_range_km,
-
-            # Airport columns
+            "fuel_state": generated.fuel_state,
+            "fuel_multiplier": generated.fuel_multiplier,
+            "aircraft_adjusted_range_km": generated.aircraft_adjusted_range_km,
+            "usable_range_km": generated.usable_range_km,
+            "extended_range_km": generated.extended_range_km,
+            "binding_side": generated.binding_side,
             "airport_icao": airport.icao,
             "airport_iata": airport.iata,
             "airport_name": airport.name,
             "airport_city": airport.city,
             "airport_country": airport.country,
-
-            # Capabilities / airport properties
             "runway_length_m": airport.runway_length_m,
             "runway_width_m": airport.runway_width_m,
             "surface_type": airport.surface_type,
@@ -202,19 +172,14 @@ def _build_rows_for_scenario(
             "unsafe_status": airport.unsafe_status,
             "civil_military": airport.civil_military,
             "slot_restricted": _bool_to_int(airport.slot_restricted),
-
-            # Engineered features
             "distance_km": round(float(feats.distance_km), 6),
             "runway_margin_m": int(feats.runway_margin_m),
             "feasible": _bool_to_int(feas.feasible),
             "feasibility_reason": feas.reason,
-
-            # Labels
+            "distance_zone": feas.zone,
             "baseline_score": score_map.get(icao, None),
             "target_rank": rank_map.get(icao, None),
             "is_top_choice": top_choice_map.get(icao, 0),
-
-            # Split placeholder
             "split": "",
         }
 
@@ -231,9 +196,6 @@ def _split_scenarios(
     test_ratio: float = 0.15,
     seed: int = 42,
 ) -> tuple[set[str], set[str], set[str]]:
-    """
-    Split unique scenario IDs only. Never split rows directly.
-    """
     if not scenario_ids:
         raise ValueError("No scenario_ids provided for splitting.")
 
@@ -264,9 +226,6 @@ def _split_scenarios(
 
 
 def _assign_split_labels(rows: List[dict], *, split_seed: int = 42) -> None:
-    """
-    Assign train/val/test at the scenario level.
-    """
     scenario_ids = [row["scenario_id"] for row in rows]
     train_ids, val_ids, test_ids = _split_scenarios(scenario_ids, seed=split_seed)
 
@@ -284,9 +243,6 @@ def _assign_split_labels(rows: List[dict], *, split_seed: int = 42) -> None:
 
 
 def validate_no_leakage(rows: Sequence[dict]) -> None:
-    """
-    Validate that no scenario_id appears in more than one split.
-    """
     split_map: Dict[str, set[str]] = {}
 
     for row in rows:
@@ -300,9 +256,6 @@ def validate_no_leakage(rows: Sequence[dict]) -> None:
 
 
 def validate_dataset_quality(rows: Sequence[dict]) -> None:
-    """
-    Basic quality checks for the pilot/full dataset.
-    """
     if not rows:
         raise ValueError("Dataset is empty.")
 
@@ -323,7 +276,6 @@ def validate_dataset_quality(rows: Sequence[dict]) -> None:
     if feasible_count <= 0:
         raise ValueError("Dataset contains no feasible rows.")
 
-    # Per-scenario check: at most one top choice
     by_scenario_top_count: Dict[str, int] = {}
     for row in rows:
         sid = row["scenario_id"]
@@ -349,9 +301,6 @@ def _filter_rows_by_split(rows: Sequence[dict], split_name: str) -> List[dict]:
 
 
 def summarize_dataset(rows: Sequence[dict]) -> dict:
-    """
-    Returns summary stats useful for debugging and logging.
-    """
     scenario_ids = sorted({row["scenario_id"] for row in rows})
     train_ids = {row["scenario_id"] for row in rows if row["split"] == "train"}
     val_ids = {row["scenario_id"] for row in rows if row["split"] == "val"}
@@ -374,23 +323,12 @@ def summarize_dataset(rows: Sequence[dict]) -> dict:
     }
 
 
-# ============================================================
-# Public builder API
-# ============================================================
-
 def build_dataset(
     *,
     scenario_count: int,
     scenario_seed: int = 42,
     split_seed: int = 42,
 ) -> List[dict]:
-    """
-    Build a full leakage-safe row-level dataset.
-
-    Only scenarios with at least one feasible airport are accepted.
-    The builder keeps generating until it collects exactly scenario_count
-    valid scenarios.
-    """
     generator = ScenarioGenerator(seed=scenario_seed)
 
     all_rows: List[dict] = []
@@ -399,16 +337,14 @@ def build_dataset(
 
     while accepted_scenarios < scenario_count:
         generated = generator.generate_one(scenario_index)
-
         runtime_scenario = _generated_to_runtime_scenario(generated)
 
         report = run_pipeline(
             runtime_scenario,
-            top_k=3,  # display/reporting top-k remains unchanged
+            top_k=3,
             max_range_km=float(generated.max_range_km),
         )
 
-        # Reject scenarios that produce no feasible airports.
         if len(report.feasible) == 0:
             scenario_index += 1
             continue
@@ -433,16 +369,6 @@ def build_and_save_dataset(
     scenario_seed: int = 42,
     split_seed: int = 42,
 ) -> dict:
-    """
-    Build dataset and save:
-    - dataset_full.csv
-    - train.csv
-    - val.csv
-    - test.csv
-
-    Returns:
-        summary dictionary
-    """
     rows = build_dataset(
         scenario_count=scenario_count,
         scenario_seed=scenario_seed,
@@ -473,10 +399,6 @@ def build_and_save_dataset(
 
     return summary
 
-
-# ============================================================
-# Optional debug runner
-# ============================================================
 
 if __name__ == "__main__":
     summary = build_and_save_dataset(

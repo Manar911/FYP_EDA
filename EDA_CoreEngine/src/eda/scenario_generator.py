@@ -8,7 +8,9 @@ This module is responsible for:
 - Selecting aircraft profiles from the aircraft database and deriving runway requirements
   in a logically consistent order
 - Assigning emergency types and diversion range limits according to defined generation policy
-- Placing aircraft positions near real airports to preserve geographic plausibility
+- Assigning fuel state and deriving the redesigned distance model
+- Placing aircraft positions near real airports while preserving some harder,
+  farther cases for realism
 - Producing structured scenario records for downstream evaluation by the deterministic pipeline
 
 The generator enforces realism and policy consistency so that the training dataset
@@ -66,14 +68,60 @@ NON_CRITICAL_EMERGENCIES = {
 }
 
 EMERGENCY_RANGE_KM = {
-    "fuel": (200, 650),
-    "medical": (250, 850),
-    "technical": (300, 900),
-    "mechanical": (300, 900),
-    "security": (300, 950),
-    "weather": (350, 1000),
-    "operational_constraints": (350, 950),
+    "fuel": (275, 850),
+    "medical": (325, 1000),
+    "technical": (375, 1050),
+    "mechanical": (375, 1050),
+    "security": (375, 1100),
+    "weather": (425, 1150),
+    "operational_constraints": (425, 1100),
 }
+
+
+# ============================================================
+# Fuel policy
+# ============================================================
+
+FUEL_STATES = [
+    "critical",
+    "low",
+    "normal",
+]
+
+FUEL_MULTIPLIERS = {
+    "critical": 0.75,
+    "low": 0.90,
+    "normal": 1.00,
+}
+
+FUEL_STATE_WEIGHTS = {
+    "critical": 0.16,
+    "low": 0.34,
+    "normal": 0.50,
+}
+
+
+# ============================================================
+# Endurance / extension policy
+# ============================================================
+
+def _lookup_endurance_extension_factor(nominal_endurance_minutes: int) -> float:
+    """
+    Returns the extension factor based on endurance class.
+
+    Tuned version:
+    - < 180 min   -> 1.25
+    - 180–240 min -> 1.35
+    - > 240 min   -> 1.45
+
+    This remains more permissive than the earlier baseline so the extended zone
+    becomes visible in the generated dataset.
+    """
+    if nominal_endurance_minutes < 180:
+        return 1.25
+    if nominal_endurance_minutes <= 240:
+        return 1.35
+    return 1.45
 
 
 # ============================================================
@@ -89,10 +137,10 @@ SCENARIO_TEMPLATES = (
 )
 
 TEMPLATE_WEIGHTS = {
-    "balanced": 0.45,
-    "short_range": 0.12,
-    "tight_runway": 0.18,
-    "competitive": 0.15,
+    "balanced": 0.38,
+    "short_range": 0.10,
+    "tight_runway": 0.14,
+    "competitive": 0.28,
     "critical_pressure": 0.10,
 }
 
@@ -147,7 +195,23 @@ class GeneratedScenario:
     aircraft_category: str
     required_runway_m: int
     emergency_type: str
+
+    # Emergency-envelope input
     max_range_km: int
+
+    # Fuel / range redesign
+    fuel_state: str
+    fuel_multiplier: float
+    aircraft_adjusted_range_km: float
+    usable_range_km: float
+    extended_range_km: float
+    binding_side: str
+
+    # Traceability
+    nominal_diversion_capability_km: int
+    nominal_endurance_minutes: int
+    endurance_extension_factor: float
+
     seed_airport_icao: str
 
     def to_dict(self) -> dict:
@@ -257,7 +321,12 @@ def _read_airports_from_package_csv(filename: str = "airports.csv") -> List[Airp
 EARTH_RADIUS_KM = 6371.0
 
 
-def _destination_point(lat_deg: float, lon_deg: float, distance_km: float, bearing_deg: float) -> tuple[float, float]:
+def _destination_point(
+    lat_deg: float,
+    lon_deg: float,
+    distance_km: float,
+    bearing_deg: float,
+) -> tuple[float, float]:
     """
     Computes a destination point from a start point, distance, and bearing.
     """
@@ -324,43 +393,84 @@ def _choose_emergency_type(rng: random.Random, template: str) -> str:
     return _weighted_choice(EMERGENCY_TYPES, EMERGENCY_WEIGHTS, rng)
 
 
+def _choose_fuel_state(rng: random.Random, template: str, emergency_type: str) -> str:
+    """
+    Selects fuel state with mild template-aware bias.
+    This keeps the distribution realistic without making every critical template
+    become a fuel-starved scenario.
+    """
+    if template == "critical_pressure":
+        weights = {
+            "critical": 0.28,
+            "low": 0.40,
+            "normal": 0.32,
+        }
+        return _weighted_choice(FUEL_STATES, weights, rng)
+
+    if emergency_type == "fuel":
+        weights = {
+            "critical": 0.30,
+            "low": 0.45,
+            "normal": 0.25,
+        }
+        return _weighted_choice(FUEL_STATES, weights, rng)
+
+    if template == "competitive":
+        weights = {
+            "critical": 0.08,
+            "low": 0.26,
+            "normal": 0.66,
+        }
+        return _weighted_choice(FUEL_STATES, weights, rng)
+
+    return _weighted_choice(FUEL_STATES, FUEL_STATE_WEIGHTS, rng)
+
+
 def _choose_required_runway_m(profile: AircraftProfile, rng: random.Random, template: str) -> int:
+    """
+    Slightly softened runway requirements to reduce over-constrained scenarios.
+    """
     span = profile.runway_max_m - profile.runway_min_m
 
     if template == "tight_runway":
-        # Still hard, but not always near-extreme.
-        low = int(profile.runway_min_m + 0.45 * span)
-        high = int(profile.runway_min_m + 0.85 * span)
+        low = int(profile.runway_min_m + 0.30 * span)
+        high = int(profile.runway_min_m + 0.70 * span)
         return rng.randint(low, high)
 
     if template == "competitive":
-        # Mid-range values help produce multiple feasible competitors.
-        low = int(profile.runway_min_m + 0.25 * span)
-        high = int(profile.runway_min_m + 0.65 * span)
+        low = int(profile.runway_min_m + 0.10 * span)
+        high = int(profile.runway_min_m + 0.45 * span)
         return rng.randint(low, high)
 
     if template == "short_range":
-        # Slightly easier runway requirement to avoid double-hard scenarios.
         low = profile.runway_min_m
-        high = int(profile.runway_min_m + 0.55 * span)
+        high = int(profile.runway_min_m + 0.35 * span)
         return rng.randint(low, high)
 
-    return rng.randint(profile.runway_min_m, int(profile.runway_min_m + 0.75 * span))
+    return rng.randint(profile.runway_min_m, int(profile.runway_min_m + 0.55 * span))
 
 
 def _choose_max_range_km(emergency_type: str, rng: random.Random, template: str) -> int:
     min_km, max_km = EMERGENCY_RANGE_KM[emergency_type]
 
     if template == "short_range":
-        upper = max(min_km, min_km + int(0.45 * (max_km - min_km)))
-        return rng.randint(min_km, upper)
+        upper = max(min_km, min_km + int(0.60 * (max_km - min_km)))
+        base = rng.randint(min_km, upper)
+        return int(base * rng.uniform(1.05, 1.12))
 
     if template == "competitive":
-        # Bias toward mid-to-high range so several airports may compete.
-        lower = min_km + int(0.35 * (max_km - min_km))
-        return rng.randint(lower, max_km)
+        lower = min_km + int(0.50 * (max_km - min_km))
+        base = rng.randint(lower, max_km)
+        return int(base * rng.uniform(1.08, 1.15))
 
-    return rng.randint(min_km, max_km)
+    if template == "critical_pressure":
+        lower = min_km + int(0.25 * (max_km - min_km))
+        upper = min_km + int(0.85 * (max_km - min_km))
+        base = rng.randint(lower, upper)
+        return int(base * rng.uniform(1.04, 1.10))
+
+    base = rng.randint(min_km, max_km)
+    return int(base * rng.uniform(1.05, 1.15))
 
 
 def _choose_seed_airport(airports: List[AirportRow], rng: random.Random) -> AirportRow:
@@ -380,21 +490,46 @@ def _choose_seed_airport(airports: List[AirportRow], rng: random.Random) -> Airp
     return rng.choice(candidates)
 
 
-def _choose_aircraft_position(seed_airport: AirportRow, rng: random.Random, template: str) -> tuple[float, float]:
+def _choose_aircraft_position(
+    seed_airport: AirportRow,
+    rng: random.Random,
+    template: str,
+) -> tuple[float, float]:
     """
-    Generate aircraft within a realistic radius of the seed airport.
-    Tuned to improve feasible-airport density without becoming unrealistic.
+    Generate aircraft positions with a realistic density bias:
+    - most scenarios are kept closer to airport clusters
+    - some remain moderately spread
+    - a small minority are intentionally harder / farther cases
+
+    This keeps the dataset realistic without making it artificially easy.
     """
     if template == "short_range":
-        radius_km = rng.uniform(50, 180)
+        base_radius = rng.uniform(20, 100)
     elif template == "competitive":
-        radius_km = rng.uniform(80, 250)
+        base_radius = rng.uniform(25, 120)
     elif template == "critical_pressure":
-        radius_km = rng.uniform(80, 320)
+        base_radius = rng.uniform(50, 180)
     elif template == "tight_runway":
-        radius_km = rng.uniform(70, 280)
+        base_radius = rng.uniform(30, 140)
     else:
-        radius_km = rng.uniform(50, 350)
+        base_radius = rng.uniform(20, 140)
+
+    roll = rng.random()
+
+    # 70%: closer to airport clusters
+    if roll < 0.70:
+        radius_km = base_radius * rng.uniform(0.55, 0.80)
+
+    # 15%: keep as originally sampled
+    elif roll < 0.85:
+        radius_km = base_radius
+
+    # 15%: deliberately harder / farther cases
+    else:
+        radius_km = base_radius * rng.uniform(1.15, 1.45)
+
+    # Safety clamp so cases remain difficult but not absurd
+    radius_km = min(radius_km, 220.0)
 
     bearing_deg = rng.uniform(0, 360)
     return _destination_point(seed_airport.lat, seed_airport.lon, radius_km, bearing_deg)
@@ -402,6 +537,61 @@ def _choose_aircraft_position(seed_airport: AirportRow, rng: random.Random, temp
 
 def _choose_template(rng: random.Random) -> str:
     return _weighted_choice(list(TEMPLATE_WEIGHTS.keys()), TEMPLATE_WEIGHTS, rng)
+
+
+# ============================================================
+# Range-model helpers
+# ============================================================
+
+def _compute_aircraft_adjusted_range_km(
+    profile: AircraftProfile,
+    fuel_state: str,
+) -> float:
+    return float(profile.nominal_diversion_capability_km) * FUEL_MULTIPLIERS[fuel_state]
+
+
+def _compute_binding_side(
+    max_range_km: int,
+    aircraft_adjusted_range_km: float,
+) -> str:
+    if aircraft_adjusted_range_km <= float(max_range_km):
+        return "aircraft_fuel"
+    return "emergency"
+
+
+def _compute_usable_range_km(
+    max_range_km: int,
+    aircraft_adjusted_range_km: float,
+) -> float:
+    """
+    Usable range must remain the strict conservative min() rule.
+    This is enforced by Scenario validation and is part of the core design.
+    """
+    return min(float(max_range_km), float(aircraft_adjusted_range_km))
+
+
+def _compute_extended_range_km(
+    usable_range_km: float,
+    endurance_extension_factor: float,
+    rng: random.Random,
+    template: str,
+) -> float:
+    """
+    Extended range is widened further so the extended zone becomes visible in
+    the dataset and supports fallback ranking behaviour.
+
+    Important:
+    - usable_range_km remains strict min()
+    - only the extended layer is widened
+    """
+    if template == "competitive":
+        extra = rng.uniform(1.18, 1.34)
+    elif template == "critical_pressure":
+        extra = rng.uniform(1.12, 1.25)
+    else:
+        extra = rng.uniform(1.12, 1.28)
+
+    return usable_range_km * endurance_extension_factor * extra
 
 
 # ============================================================
@@ -418,6 +608,10 @@ class ScenarioGenerator:
     - selects aircraft from the structured aircraft database
     - aircraft type chosen before runway requirement
     - max_range_km depends on emergency type
+    - fuel state modifies aircraft diversion capability
+    - final usable range is determined by interaction between:
+        1) emergency max range
+        2) aircraft/fuel adjusted capability
     """
 
     def __init__(
@@ -450,14 +644,41 @@ class ScenarioGenerator:
         """
         chosen_template = template or _choose_template(self.rng)
         if chosen_template not in SCENARIO_TEMPLATES:
-            raise ValueError(f"Unknown template '{chosen_template}'. Must be one of {SCENARIO_TEMPLATES}.")
+            raise ValueError(
+                f"Unknown template '{chosen_template}'. Must be one of {SCENARIO_TEMPLATES}."
+            )
 
         seed_airport = _choose_seed_airport(self.airports, self.rng)
         aircraft_profile = _choose_aircraft_profile(self.aircraft_profiles, self.rng, chosen_template)
         emergency_type = _choose_emergency_type(self.rng, chosen_template)
+        fuel_state = _choose_fuel_state(self.rng, chosen_template, emergency_type)
         required_runway_m = _choose_required_runway_m(aircraft_profile, self.rng, chosen_template)
         max_range_km = _choose_max_range_km(emergency_type, self.rng, chosen_template)
         aircraft_lat, aircraft_lon = _choose_aircraft_position(seed_airport, self.rng, chosen_template)
+
+        fuel_multiplier = FUEL_MULTIPLIERS[fuel_state]
+        aircraft_adjusted_range_km = _compute_aircraft_adjusted_range_km(aircraft_profile, fuel_state)
+
+        usable_range_km = _compute_usable_range_km(
+            max_range_km,
+            aircraft_adjusted_range_km,
+        )
+
+        endurance_extension_factor = _lookup_endurance_extension_factor(
+            aircraft_profile.nominal_endurance_minutes
+        )
+
+        extended_range_km = _compute_extended_range_km(
+            usable_range_km,
+            endurance_extension_factor,
+            self.rng,
+            chosen_template,
+        )
+
+        binding_side = _compute_binding_side(
+            max_range_km,
+            aircraft_adjusted_range_km,
+        )
 
         return GeneratedScenario(
             scenario_id=f"S{scenario_index:05d}",
@@ -468,6 +689,15 @@ class ScenarioGenerator:
             required_runway_m=required_runway_m,
             emergency_type=emergency_type,
             max_range_km=max_range_km,
+            fuel_state=fuel_state,
+            fuel_multiplier=fuel_multiplier,
+            aircraft_adjusted_range_km=round(aircraft_adjusted_range_km, 6),
+            usable_range_km=round(usable_range_km, 6),
+            extended_range_km=round(extended_range_km, 6),
+            binding_side=binding_side,
+            nominal_diversion_capability_km=aircraft_profile.nominal_diversion_capability_km,
+            nominal_endurance_minutes=aircraft_profile.nominal_endurance_minutes,
+            endurance_extension_factor=endurance_extension_factor,
             seed_airport_icao=seed_airport.icao,
         )
 
@@ -516,7 +746,10 @@ def generate_scenarios(
     Useful for dataset_builder.py later.
     """
     generator = ScenarioGenerator(seed=seed)
-    return [scenario.to_dict() for scenario in generator.generate_many(count=count, start_index=start_index)]
+    return [
+        scenario.to_dict()
+        for scenario in generator.generate_many(count=count, start_index=start_index)
+    ]
 
 
 def preview_scenarios(count: int = 5, seed: int = 42) -> None:

@@ -5,19 +5,20 @@ Feasibility filtering (hard constraints) for the EDA Core Engine.
 
 Purpose:
 - Reject airports that are unsafe or infeasible BEFORE ranking.
-- This acts as a safety gate that reduces hazard risk (e.g., selecting a runway
-  that is too short or an airport that is unreachable).
+- Act as a safety gate that removes clearly invalid candidates.
+- Apply the redesigned distance model using:
+    1) usable_range_km as the preferred boundary
+    2) extended_range_km as the last-resort boundary
 - Integrate static airport restrictions and dynamic operational constraints.
 
-Current hard constraints:
-1) Reachability: airport distance must be within an assumed maximum range.
-2) Runway feasibility: available runway must meet required runway.
-3) Service constraint: if emergency is MEDICAL, airport must have medical capability.
-4) Operational restrictions:
-   - closed / temporary closed airports are rejected
-   - unsafe airports are rejected
-   - restricted / military airports are rejected for non-critical emergencies
-   - dynamic scenario overrides are applied through OperationalConstraints
+Distance redesign:
+- Preferred: distance <= usable_range_km
+- Extended: usable_range_km < distance <= extended_range_km
+- Reject: distance > extended_range_km
+
+Important:
+- max_range_km is no longer the final reachability truth.
+- It is one input into the range model already carried inside Scenario.
 """
 
 from __future__ import annotations
@@ -36,7 +37,25 @@ from eda.scenario import Scenario, EmergencyType
 @dataclass(frozen=True)
 class FeasibilityResult:
     feasible: bool
-    reason: str  # short explanation for reject/accept
+    reason: str
+    zone: str  # "preferred", "extended", or "reject"
+
+
+def _classify_distance_zone(
+    distance_km: float,
+    usable_range_km: float,
+    extended_range_km: float,
+) -> str:
+    """
+    Classifies the airport into one of the three approved distance zones.
+    """
+    if distance_km <= usable_range_km:
+        return "preferred"
+
+    if distance_km <= extended_range_km:
+        return "extended"
+
+    return "reject"
 
 
 def is_feasible(
@@ -45,7 +64,7 @@ def is_feasible(
     features: EngineFeatures,
     *,
     constraints: OperationalConstraints | None = None,
-    max_range_km: float = 800.0,
+    max_range_km: float = 800.0,  # kept temporarily for compatibility
 ) -> FeasibilityResult:
     """
     Determines whether an airport is feasible for the given scenario based on
@@ -56,30 +75,55 @@ def is_feasible(
         airport: Airport candidate being evaluated.
         features: Precomputed features for the airport.
         constraints: Optional scenario-specific operational overrides.
-        max_range_km: Simplified reachability assumption.
+        max_range_km: Legacy compatibility parameter. No longer used as the
+            final reachability authority once Scenario carries the redesigned
+            range model.
 
     Returns:
-        FeasibilityResult: feasible flag + reason.
+        FeasibilityResult: feasible flag + explanation + distance zone.
     """
+
+    # Explicitly acknowledge the legacy parameter but do not use it as the
+    # real source of truth anymore. The redesigned range model lives in Scenario.
+    _ = max_range_km
 
     if constraints is None:
         constraints = OperationalConstraints()
 
-    # 1) Reachability constraint
-    if features.distance_km > max_range_km:
-        return FeasibilityResult(False, f"Rejected: unreachable (> {max_range_km} km)")
+    # 1) Distance-zone classification using redesigned range model
+    distance_zone = _classify_distance_zone(
+        distance_km=float(features.distance_km),
+        usable_range_km=float(scenario.usable_range_km),
+        extended_range_km=float(scenario.extended_range_km),
+    )
+
+    if distance_zone == "reject":
+        return FeasibilityResult(
+            False,
+            (
+                "Rejected: unreachable beyond extended range "
+                f"(distance={features.distance_km:.2f} km, "
+                f"usable={scenario.usable_range_km:.2f} km, "
+                f"extended={scenario.extended_range_km:.2f} km)"
+            ),
+            "reject",
+        )
 
     # 2) Runway constraint
     if features.runway_margin_m < 0:
-        return FeasibilityResult(False, "Rejected: runway too short")
+        return FeasibilityResult(False, "Rejected: runway too short", "reject")
 
     # 3) Medical service constraint
     if scenario.emergency_type == EmergencyType.MEDICAL and not features.has_medical:
-        return FeasibilityResult(False, "Rejected: no medical capability")
+        return FeasibilityResult(False, "Rejected: no medical capability", "reject")
 
     # 4) Operational restrictions constraint
     op_result = check_operational_constraints(airport, scenario, constraints)
     if not op_result.allowed:
-        return FeasibilityResult(False, op_result.reason)
+        return FeasibilityResult(False, op_result.reason, "reject")
 
-    return FeasibilityResult(True, "Accepted")
+    # 5) Accepted candidate
+    if distance_zone == "preferred":
+        return FeasibilityResult(True, "Accepted: preferred range", "preferred")
+
+    return FeasibilityResult(True, "Accepted: extended range", "extended")
