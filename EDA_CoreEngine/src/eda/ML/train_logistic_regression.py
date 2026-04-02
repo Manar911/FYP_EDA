@@ -38,16 +38,19 @@ from sklearn.metrics import (
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-
+# Paths to the pre-split CSVs produced by build_ml_dataset.py
 TRAIN_CSV = "data_generated/ml_dataset/train_ml.csv"
 VAL_CSV = "data_generated/ml_dataset/val_ml.csv"
 TEST_CSV = "data_generated/ml_dataset/test_ml.csv"
 
+# Where to save the trained model pipeline after training
 MODEL_DIR = Path("models")
 MODEL_PATH = MODEL_DIR / "logistic_regression_pipeline.joblib"
 
 
 def build_feature_lists() -> tuple[list[str], list[str], list[str]]:
+
+    
     exclude_from_features = [
         "scenario_id",
         "is_top_choice",
