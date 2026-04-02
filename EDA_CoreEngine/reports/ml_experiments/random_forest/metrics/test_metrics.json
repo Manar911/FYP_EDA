@@ -1,0 +1,8 @@
+{
+    "split": "test",
+    "roc_auc": 0.9818,
+    "pr_auc": 0.9529,
+    "top1_accuracy": 0.9067,
+    "top3_accuracy": 1.0,
+    "mrr": 0.95
+}
