@@ -1,0 +1,6 @@
+split: validation
+roc_auc: 0.8669
+pr_auc: 0.6662
+top1_accuracy: 0.8333
+top3_accuracy: 1.0
+mrr: 0.9078
