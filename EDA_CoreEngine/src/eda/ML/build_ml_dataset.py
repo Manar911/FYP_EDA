@@ -1,3 +1,17 @@
+"""
+build_ml_dataset.py
+
+ML dataset builder for the airport ranking model.
+
+This module takes the full generated dataset and produces a clean, ML-ready CSV by:
+- Filtering out infeasible airport candidates
+- Keeping one positive (top choice) and the top-K ranked negatives per scenario
+- Dropping leakage-prone and non-ML columns (scores, names, feasibility metadata)
+
+Input:  data_generated/training_1000/dataset_full.csv
+Output: data_generated/ml_dataset/ml_dataset.csv
+"""
+
 from __future__ import annotations
 
 import pandas as pd
