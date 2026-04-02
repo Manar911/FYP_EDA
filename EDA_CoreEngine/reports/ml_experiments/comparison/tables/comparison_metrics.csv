@@ -1,0 +1,3 @@
+Model,Top-1 Accuracy,MRR
+Logistic Regression,0.8200000000000001,0.9
+Random Forest,0.9067000000000001,0.9500000000000001
