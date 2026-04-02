@@ -52,6 +52,7 @@ from experiment_reporting import (
     save_classification_report_json,
     save_classification_report_csv,
     save_metric_bar_chart,
+    save_split_comparison_chart,
 )
 
 
@@ -384,6 +385,12 @@ def main() -> None:
     model.fit(X_train, y_train)
     print("Training complete.")
 
+    
+    # Training evaluation
+    
+    train_row = evaluate_row_level(model, X_train, y_train, "Train")
+    train_scenario = evaluate_scenario_level(train_df, model, feature_cols, "Train")    
+
     # Validation evaluation + saved reporting outputs
 
     val_row = evaluate_row_level(model, X_val, y_val, "Validation")
@@ -512,6 +519,32 @@ def main() -> None:
         ],
         report_paths["figures"] / "test_class1_metrics.png",
         "Logistic Regression - Test Class 1 Metrics",
+    )    
+
+    # ---------------------------------------------------------
+    # Train vs Validation vs Test comparison charts
+    # ---------------------------------------------------------
+
+    save_split_comparison_chart(
+        ["Train", "Validation", "Test"],
+        [
+            train_scenario["top1_accuracy"],
+            val_scenario["top1_accuracy"],
+            test_scenario["top1_accuracy"],
+        ],
+        report_paths["figures"] / "top1_split_comparison.png",
+        "Logistic Regression - Top-1 Accuracy (Train vs Val vs Test)",
+    )
+
+    save_split_comparison_chart(
+        ["Train", "Validation", "Test"],
+        [
+            train_scenario["mrr"],
+            val_scenario["mrr"],
+            test_scenario["mrr"],
+        ],
+        report_paths["figures"] / "mrr_split_comparison.png",
+        "Logistic Regression - MRR (Train vs Val vs Test)",
     )    
 
     # Save model

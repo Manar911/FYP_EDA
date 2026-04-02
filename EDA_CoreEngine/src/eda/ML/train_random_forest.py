@@ -41,7 +41,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
 
-# Reporting utilities (same as Logistic Regression)
+# Reporting utilities
 
 
 from experiment_reporting import (
@@ -54,6 +54,7 @@ from experiment_reporting import (
     save_classification_report_json,
     save_classification_report_csv,
     save_metric_bar_chart,
+    save_split_comparison_chart,
 )
 
 
@@ -235,6 +236,11 @@ def main():
     print("Training Random Forest...")
     model.fit(X_train, y_train)
     print("Training complete.")
+    
+    # Training evaluation (diagnostic only - not saved)
+    
+    train_row = evaluate_row(model, X_train, y_train, "Train")
+    train_scenario = evaluate_scenario(train_df, model, feature_cols, "Train") 
 
     # ---------- VALIDATION ----------
     val_row = evaluate_row(model, X_val, y_val, "Validation")
@@ -305,6 +311,32 @@ def main():
 
     save_classification_report_csv(test_row["classification_report"],
         report_paths["metrics"] / "test_classification_report.csv")
+    
+    # ---------------------------------------------------------
+    # Train vs Validation vs Test comparison charts
+    # ---------------------------------------------------------
+
+    save_split_comparison_chart(
+        ["Train", "Validation", "Test"],
+        [
+            train_scenario["top1_accuracy"],
+            val_scenario["top1_accuracy"],
+            test_scenario["top1_accuracy"],
+        ],
+        report_paths["figures"] / "top1_split_comparison.png",
+        "Random Forest - Top-1 Accuracy (Train vs Val vs Test)",
+    )
+
+    save_split_comparison_chart(
+        ["Train", "Validation", "Test"],
+        [
+            train_scenario["mrr"],
+            val_scenario["mrr"],
+            test_scenario["mrr"],
+        ],
+        report_paths["figures"] / "mrr_split_comparison.png",
+        "Random Forest - MRR (Train vs Val vs Test)",
+    )    
 
     # Save model
     MODEL_DIR.mkdir(exist_ok=True)

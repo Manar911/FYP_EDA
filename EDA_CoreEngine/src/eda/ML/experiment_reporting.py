@@ -235,3 +235,31 @@ def save_metric_bar_chart(
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)      
+
+# Comparison Chart for train, val, and test
+
+def save_split_comparison_chart(
+    splits: list[str],
+    values: list[float],
+    output_path: Path,
+    title: str,
+    ylabel: str = "Score",
+) -> None:
+    """
+    Saves a bar chart comparing Train / Validation / Test performance.
+
+    Used to:
+    - check generalization
+    - visualize overfitting
+    """
+
+    fig, ax = plt.subplots(figsize=(6, 5))
+
+    ax.bar(splits, values)
+    ax.set_title(title)
+    ax.set_ylabel(ylabel)
+    ax.set_ylim(0, 1.05)
+
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)    
