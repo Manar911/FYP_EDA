@@ -154,13 +154,20 @@ def build_pipeline(num_cols, cat_cols):
     )
 
     model = LGBMClassifier(
-        n_estimators=200,
-        learning_rate=0.05,
-        num_leaves=31,
-        class_weight="balanced",
-        random_state=42,
-        n_jobs=-1,
-    )
+    n_estimators=300,          # more trees but controlled
+    learning_rate=0.05,        # slower learning (less memorization)
+    num_leaves=31,             # reduce complexity
+    max_depth=6,               # limit tree depth
+    min_child_samples=20,      # prevent tiny leaf nodes
+    subsample=0.8,             # row sampling
+    colsample_bytree=0.8,      # feature sampling
+    reg_alpha=0.1,             # L1 regularization
+    reg_lambda=0.1,            # L2 regularization
+    class_weight="balanced",   # adjusts for class imbalance automatically
+    random_state=42,           # ensures same output every run
+    n_jobs=-1,                 # uses all CPU cores for faster training
+    verbose=-1,                # hide LightGBM training output
+)
 
     return Pipeline([
         ("prep", preprocessor),
