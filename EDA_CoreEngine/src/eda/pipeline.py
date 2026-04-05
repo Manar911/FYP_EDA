@@ -141,7 +141,7 @@ def _build_ml_row(
 
         # Categorical features
         "aircraft_type": scenario.aircraft_type,
-        "aircraft_category": getattr(scenario, "aircraft_category", "unknown"),
+        "aircraft_category": scenario.aircraft_category,
         "emergency_type": scenario.emergency_type.value,
         "fuel_state": scenario.fuel_state.value,
         "binding_side": scenario.binding_side.value,

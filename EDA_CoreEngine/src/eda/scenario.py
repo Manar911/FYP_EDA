@@ -57,6 +57,7 @@ class Scenario:
 
     # Increment 2 aircraft / range context
     aircraft_type: str
+    aircraft_category: str  # loaded automatically from aircraft database
     fuel_state: FuelState
     fuel_multiplier: float
 
