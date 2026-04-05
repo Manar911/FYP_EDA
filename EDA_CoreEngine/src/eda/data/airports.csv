@@ -85,3 +85,13 @@ DNKN,KAN,Mallam Aminu Kano International Airport,Kano,Nigeria,12.0476,8.52462,15
 HKIS,ILU,Isiolo Airport,Isiolo,Kenya,0.338167,37.591667,3495,1524,30,asphalt,VOR,0,0,none,1,none,0,0,0,0,0,0,0,closed,none,caution,civil,0
 HELX,LXR,Luxor International Airport,Luxor,Egypt,25.671,32.7066,294,3000,45,asphalt,RNAV,0,0,none,1,basic,1,0,1,0,0,1,1,open,none,safe,joint,0
 WIMM,KNO,Kualanamu International Airport,Medan,Indonesia,3.641583,98.885233,23,3000,60,asphalt,RNAV,1,1,basic,1,basic,1,0,1,1,0,1,1,open,none,safe,civil,0
+VVNB,HAN,Noi Bai International Airport,Hanoi,Viet Nam,21.2212,105.8072,39,3800,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+WIII,CGK,Soekarno-Hatta International Airport,Jakarta,Indonesia,6.1256,106.6559,34,3660,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+SKBO,BOG,El Dorado International Airport,Bogota,Colombia,4.7016,74.1469,2548,3800,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+HTDA,DAR,Julius Nyerere International Airport,Dar es Salaam,Tanzania,-6.8781,39.2026,182,3000,45,asphalt,ILS,1,1,basic,1,basic,1,1,1,1,1,1,1,open,none,safe,civil,0
+HRYR,KGL,Kigali International Airport,Kigali,Rwanda,-1.9686,30.1395,1490,3500,45,asphalt,ILS,1,1,basic,1,basic,1,1,1,1,1,1,1,open,none,safe,civil,0
+UTTT,TAS,Tashkent International Airport,Tashkent,Uzbekistan,41.2579,69.2812,489,3200,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OMSJ,SHJ,Sharjah International Airport,Sharjah,United Arab Emirates,25.3286,55.5172,111,4060,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OEJN,JED,King Abdulaziz International Airport,Jeddah,Saudi Arabia,21.6796,39.1565,48,4000,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OEDM,DMM,King Fahd International Airport,Dammam,Saudi Arabia,26.4712,49.7979,72,4000,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OEMA,MED,Prince Mohammad Bin Abdulaziz Airport,Medina,Saudi Arabia,24.5534,39.7051,2080,3500,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
