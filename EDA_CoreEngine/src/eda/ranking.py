@@ -219,25 +219,18 @@ def score_airport(
     score = 0.0
 
     if emergency_type == EmergencyType.FUEL:
-        # Distance is critical — land as soon as safely possible
         w_distance = 0.80
         w_runway = 0.20
 
     elif emergency_type == EmergencyType.MEDICAL:
-        # Medical facility bonus dominates — reduce base weights
-        # to give the bonus more relative influence
         w_distance = 0.50
         w_runway = 0.20
 
     elif emergency_type in (EmergencyType.MECHANICAL, EmergencyType.TECHNICAL):
-        # Maintenance capability matters — moderate distance,
-        # slightly increased runway weight for safety margin
         w_distance = 0.60
         w_runway = 0.25
 
     elif emergency_type == EmergencyType.WEATHER:
-        # Instrument approach and runway length matter more
-        # in degraded visibility conditions
         w_distance = 0.55
         w_runway = 0.30
 
@@ -245,34 +238,84 @@ def score_airport(
     score += w_distance * _score_distance(features.distance_km)
     score += w_runway * _score_runway_margin(features.runway_margin_m)
 
-    
-    # Capability bonuses
-    
-
-    # Medical bonus — critical for medical emergencies
+    # --------------------------------------------------
+    # Graduated medical capability bonus.
+    # Advanced medical facilities are significantly more
+    # valuable than basic ones for medical emergencies.
+    # Basic is still better than none — which is already
+    # enforced by the hard filter in filter.py.
+    # --------------------------------------------------
     if emergency_type == EmergencyType.MEDICAL and features.has_medical:
-        score += bonus_medical
+        if airport.medical_level == "advanced":
+            score += bonus_medical            # 0.50 — full bonus
+        else:
+            score += bonus_medical * 0.60    # 0.30 — basic level
 
-    # Rescue capability — always beneficial
+    # --------------------------------------------------
+    # Graduated rescue capability bonus.
+    # Major rescue category provides significantly better
+    # emergency response than standard category.
+    # --------------------------------------------------
     if features.has_rescue:
-        score += bonus_rescue
+        if airport.rescue_category == "major":
+            score += bonus_rescue            # 0.20 — full bonus
+        else:
+            score += bonus_rescue * 0.50    # 0.10 — standard category
 
+    # --------------------------------------------------
+    # Firefighting capability bonus.
+    # Critical for fuel and mechanical emergencies where
+    # fire risk is elevated. Always beneficial otherwise.
+    # --------------------------------------------------
+    if airport.has_firefighting:
+        if emergency_type in (EmergencyType.FUEL,
+                              EmergencyType.MECHANICAL,
+                              EmergencyType.TECHNICAL):
+            score += 0.15    # elevated importance for fire-risk emergencies
+        else:
+            score += 0.05    # minor general benefit
+
+    # --------------------------------------------------
+    # Fuel availability bonus.
+    # Important for fuel emergencies — confirms the
+    # aircraft can be refuelled after landing.
+    # --------------------------------------------------
+    if emergency_type == EmergencyType.FUEL:
+        if airport.fuel_available:
+            score += 0.10
+
+    # --------------------------------------------------
+    # 24h operations bonus.
+    # An airport open at all hours is more reliable for
+    # emergency diversions regardless of time of day.
+    # --------------------------------------------------
+    if airport.open_24h:
+        score += 0.05
+
+    # --------------------------------------------------
     # Maintenance bonus — critical for mechanical/technical
+    # --------------------------------------------------
     if emergency_type in (EmergencyType.MECHANICAL, EmergencyType.TECHNICAL):
         if airport.has_maintenance:
             score += MAINTENANCE_BONUS
 
-    # ILS bonus — critical for weather emergencies
+    # --------------------------------------------------
+    # ILS and weather reporting bonuses for weather emergencies
+    # --------------------------------------------------
     if emergency_type == EmergencyType.WEATHER:
         if airport.has_ils:
             score += ILS_BONUS
-        # Weather reporting gives crew accurate approach data
         if airport.weather_reporting:
             score += 0.10
 
-    
-    # Distance zone and operational penalties
-    
+    # --------------------------------------------------
+    # Slot restriction soft penalty.
+    # Slot-restricted airports add coordination complexity
+    # during emergencies — a soft discouragement only,
+    # not a hard rejection.
+    # --------------------------------------------------
+    if airport.slot_restricted:
+        score -= 0.05
 
     # Soft last-resort penalty for extended-range candidates
     score -= _distance_zone_penalty(distance_zone)
