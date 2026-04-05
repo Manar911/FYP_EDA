@@ -19,32 +19,35 @@ sys.path.append(str(Path(__file__).resolve().parent / "src"))
 
 from eda.airport_db import load_airports
 from eda.pipeline import run_pipeline
-from eda.scenario import Scenario, EmergencyType, FuelState, BindingSide
+from eda.scenario import EmergencyType, FuelState
+from eda.scenario_builder import build_scenario, list_available_aircraft 
 from eda.explanation import generate_explanation
 from eda.logger import save_decision_report_json
 
 
 def main() -> None:
     airports = load_airports()
-    print(f"Loaded airports: {len(airports)}")
 
-    # Demo scenario
-    scenario = Scenario(
-    aircraft_lat=26.2708, #Bahrain area example
-    aircraft_lon=50.6336,
-    required_runway_m=3000,
-    emergency_type=EmergencyType.FUEL,
+    # Build scenario from minimal user inputs.
+    # Aircraft performance data is loaded automatically
+    # from the aircraft profiles database — no manual
+    # hardcoding of range, runway, or fuel values required.
+    print(f"Available aircraft: {list_available_aircraft()}")
+    print()
 
-    aircraft_type="A320",
-    fuel_state=FuelState.LOW,
-    fuel_multiplier=0.90,
+    scenario = build_scenario(
+        aircraft_type="A320",
+        aircraft_lat=26.2708,
+        aircraft_lon=50.6336,
+        fuel_state=FuelState.LOW,
+        emergency_type=EmergencyType.FUEL,
+    )
 
-    max_range_km=3000.0,
-    aircraft_adjusted_range_km=5490.0,
-    usable_range_km=3000.0,
-    extended_range_km=3500.0,
-    binding_side=BindingSide.EMERGENCY,
-)
+    print(f"Aircraft:        {scenario.aircraft_type} ({scenario.aircraft_category})")
+    print(f"Fuel state:      {scenario.fuel_state.value}")
+    print(f"Usable range:    {scenario.usable_range_km} km")
+    print(f"Required runway: {scenario.required_runway_m} m")
+    print()
 
     report = run_pipeline(scenario)
     log_path = save_decision_report_json(report)
