@@ -1,6 +1,6 @@
 split: test
-roc_auc: 0.8592
-pr_auc: 0.6859
-top1_accuracy: 0.82
-top3_accuracy: 1.0
-mrr: 0.9
+roc_auc: 0.9761
+pr_auc: 0.8821
+top1_accuracy: 0.86
+top3_accuracy: 0.9933
+mrr: 0.9258
