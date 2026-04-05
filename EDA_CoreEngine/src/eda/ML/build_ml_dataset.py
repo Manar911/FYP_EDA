@@ -45,7 +45,22 @@ def main() -> None:
     )
     print("After top-K selection:", df_ml.shape)
 
-    # 4) Sanity checks
+    
+    # 4) Remove scenarios with fewer than 3 candidates
+    """
+    Safety net that complements the same check in dataset_builder.py.
+    Scenarios with fewer than 3 candidates are not genuine ranking problems —
+    the top choice label is forced by the absence of alternatives rather than
+    by genuine airport superiority. Removing them here ensures the ML-ready
+    dataset contains only real multi-airport ranking decisions, preventing
+    the model from learning biased patterns from forced single-choice scenarios.
+    """
+    candidate_counts_before = df_ml.groupby("scenario_id").size()
+    valid_scenarios = candidate_counts_before[candidate_counts_before >= 3].index
+    df_ml = df_ml[df_ml["scenario_id"].isin(valid_scenarios)].copy()
+    print("After removing low-candidate scenarios:", df_ml.shape)
+
+    # 5) Sanity checks
     print("Unique scenarios:", df_ml["scenario_id"].nunique())
 
     positive_counts = df_ml.groupby("scenario_id")["is_top_choice"].sum()
@@ -57,7 +72,7 @@ def main() -> None:
     print("Max candidates per scenario:", candidate_counts.max())
     print("Average candidates per scenario:", candidate_counts.mean())
 
-    # 5) Drop leakage / non-ML columns
+    # 6) Drop leakage / non-ML columns
     columns_to_drop = [
         "baseline_score",
         "feasibility_reason",
@@ -70,7 +85,7 @@ def main() -> None:
     ]
     df_ml = df_ml.drop(columns=columns_to_drop, errors="ignore")
 
-    # 6) Save ML-ready dataset
+    # 7) Save ML-ready dataset
     df_ml.to_csv(OUTPUT_CSV, index=False)
     print(f"ML-ready dataset saved to: {OUTPUT_CSV}")
     print("Final ML dataset shape:", df_ml.shape)

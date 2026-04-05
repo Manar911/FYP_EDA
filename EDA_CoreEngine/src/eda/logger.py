@@ -60,34 +60,36 @@ def decision_report_to_dict(report: DecisionReport) -> dict[str, Any]:
         )
 
     feasible = []
-    for airport, features in report.feasible:
+
+    for airport, features, distance_zone in report.feasible:
         feasible.append(
             {
                 "airport": asdict(airport),
                 "features": asdict(features),
+                "distance_zone": distance_zone,
             }
         )
 
     return {
-    "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now().isoformat(),
 
-    "scenario": {
-        "aircraft_lat": report.scenario.aircraft_lat,
-        "aircraft_lon": report.scenario.aircraft_lon,
-        "required_runway_m": report.scenario.required_runway_m,
-        "emergency_type": report.scenario.emergency_type.value,
-    },
+        "scenario": {
+            "aircraft_lat": report.scenario.aircraft_lat,
+            "aircraft_lon": report.scenario.aircraft_lon,
+            "required_runway_m": report.scenario.required_runway_m,
+            "emergency_type": report.scenario.emergency_type.value,
+        },
 
-    "selected_option": ranked_with_explanations[0] if ranked_with_explanations else None,
+        "selected_option": ranked_with_explanations[0] if ranked_with_explanations else None,
 
-    "total_airports": report.total_airports,
+        "total_airports": report.total_airports,
 
-    "evaluated": evaluated,
+        "evaluated": evaluated,
 
-    "feasible": feasible,
+        "feasible": feasible,
 
-    "ranked_top": ranked_with_explanations,
-}
+        "ranked_top": ranked_with_explanations,
+    }
 
 
 def save_decision_report_json(

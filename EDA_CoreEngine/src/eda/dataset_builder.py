@@ -345,7 +345,7 @@ def build_dataset(
             max_range_km=float(generated.max_range_km),
         )
 
-        if len(report.feasible) == 0:
+        if len(report.feasible) < 3:
             scenario_index += 1
             continue
 

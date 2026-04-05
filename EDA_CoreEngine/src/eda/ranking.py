@@ -32,9 +32,9 @@ from eda.config import (
 )
 
 
-# ---------------------------------------------------------
+
 # Distance-zone penalty calibration
-# ---------------------------------------------------------
+
 
 EXTENDED_RANGE_PENALTY = 0.15
 
@@ -47,21 +47,39 @@ class RankedOption:
     distance_zone: str  # "preferred" or "extended"
 
 
-# ---------------------------
+
 # Base scoring
-# ---------------------------
+
 
 def _score_distance(distance_km: float) -> float:
-    return 1.0 / (1.0 + float(distance_km))
+    """
+    Normalised distance score.
+    0 km  → 1.0 (best possible)
+    500 km → ~0.5 (moderate)
+    1500 km → ~0.25 (far but reachable)
+    
+    Uses a reference scale of 500km as the 
+    mid-point — typical preferred diversion range.
+    """
+    return 500.0 / (500.0 + float(distance_km))
 
 
 def _score_runway_margin(margin_m: int) -> float:
-    return float(margin_m) / 1000.0
+    """
+    Normalised runway margin score.
+    A margin of 500m is considered adequate.
+    A margin of 1500m is considered excellent.
+    Beyond 1500m adds no additional value.
+    
+    Capped so oversized runways don't dominate.
+    """
+    capped = min(float(margin_m), 1500.0)
+    return capped / 1500.0
 
 
-# ---------------------------
+
 # Distance-zone penalties
-# ---------------------------
+
 
 def _distance_zone_penalty(distance_zone: str) -> float:
     """
@@ -85,9 +103,9 @@ def _distance_zone_penalty(distance_zone: str) -> float:
     )
 
 
-# ---------------------------
+
 # Operational penalties
-# ---------------------------
+
 
 def _operational_penalty(
     airport: Airport,
@@ -110,30 +128,30 @@ def _operational_penalty(
     civil_military = airport.civil_military.lower()
     restricted_status = airport.restricted_status.lower()
 
-    # ---------------------------
+    
     # Caution airports
-    # ---------------------------
+    
     if unsafe_status == "caution":
         penalty += 0.15
 
-    # ---------------------------
+    
     # Joint-use airports
-    # ---------------------------
+    
     if civil_military == "joint":
         penalty += 0.10
 
-    # ---------------------------
+    
     # Military airports
-    # ---------------------------
+    
     if civil_military == "military":
         if critical:
             penalty += 0.40   # allowed but strong penalty
         else:
             penalty += 1.0    # should already be filtered, but safe fallback
 
-    # ---------------------------
+    
     # Restricted airports
-    # ---------------------------
+    
     if restricted_status in {"restricted", "military_restricted"}:
         if critical:
             penalty += 0.30   # last resort
@@ -143,9 +161,9 @@ def _operational_penalty(
     return penalty
 
 
-# ---------------------------
+
 # Final scoring
-# ---------------------------
+
 
 def score_airport(
     emergency_type: EmergencyType,
@@ -181,9 +199,9 @@ def score_airport(
     return float(score)
 
 
-# ---------------------------
+
 # Ranking
-# ---------------------------
+
 
 def rank_options(
     emergency_type: EmergencyType,

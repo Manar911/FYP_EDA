@@ -43,5 +43,5 @@ class DecisionReport:
     scenario: Scenario
     total_airports: int
     evaluated: List[EvaluatedAirport]
-    feasible: List[Tuple[Airport, EngineFeatures]]
+    feasible: List[Tuple[Airport, EngineFeatures, str]]
     ranked_top: List[RankedOption]

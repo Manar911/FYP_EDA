@@ -1,4 +1,17 @@
+
 """
+
+FINAL SELECTED MODEL
+
+LightGBM is selected as the final ranking model based on:
+- highest Top-1 accuracy
+- highest MRR
+- strong generalization (validation ≈ test)
+- stable performance after tuning
+
+This model is used as the primary ranking engine in the system.
+
+
 train_lightgbm.py
 
 Gradient boosting model training for the EDA Core Engine (Increment 2).
@@ -103,6 +116,9 @@ def build_feature_lists():
         "slot_restricted",
         "distance_km",
         "runway_margin_m",
+        "distance_rank",        # rank of this airport by distance within scenario
+        "range_coverage_ratio", # usable_range_km / distance_km — fuel urgency signal
+        "runway_rank",          # rank of this airport by runway length within scenario
     ]
 
     cat_cols = [

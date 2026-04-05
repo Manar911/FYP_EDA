@@ -37,25 +37,78 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 INPUT_CSV = "data_generated/ml_dataset/ml_dataset.csv"
 OUTPUT_DIR = Path("data_generated/ml_dataset")
 
+def add_relative_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Adds three within-scenario relative features to the dataset.
+
+    These features give the model comparative context about each candidate
+    airport relative to all other candidates in the same scenario.
+    Without these, the model only sees absolute values and cannot judge
+    whether a given distance or runway length is good or bad relative
+    to what else is available in this specific scenario.
+
+    distance_rank:
+        Rank of this airport by distance within its scenario.
+        1 = closest candidate, 2 = second closest, etc.
+        Tells the model: is this the nearest option or the farthest?
+
+    range_coverage_ratio:
+        usable_range_km divided by distance_km.
+        A ratio of 2.0 means the aircraft has twice the range needed.
+        A ratio close to 1.0 means the aircraft is flying near its limit.
+        Encodes fuel urgency and distance together in one number.
+
+    runway_rank:
+        Rank of this airport by runway length within its scenario.
+        1 = longest runway, 2 = second longest, etc.
+        Prevents raw runway length from dominating — the model now
+        sees relative runway quality instead of absolute metres.
+    """
+
+    # Rank each candidate by distance within its scenario (1 = closest)
+    df["distance_rank"] = (
+        df.groupby("scenario_id")["distance_km"]
+        .rank(method="min", ascending=True)
+        .astype(int)
+    )
+
+    # Fuel urgency × distance relationship in one number
+    df["range_coverage_ratio"] = (
+        df["usable_range_km"] / df["distance_km"]
+    ).round(4)
+
+    # Rank each candidate by runway length within its scenario (1 = longest)
+    df["runway_rank"] = (
+        df.groupby("scenario_id")["runway_length_m"]
+        .rank(method="min", ascending=False)
+        .astype(int)
+    )
+
+    return df
 
 def main() -> None:
     
     # 1) Load ML-ready dataset
-    
-    df = pd.read_csv(INPUT_CSV)
 
+    df = pd.read_csv(INPUT_CSV)
     print("Loaded ML dataset shape:", df.shape)
     print(df.head())
 
+    # 2) Add within-scenario relative features
+    # These must be computed before splitting so that ranks are calculated
+    # correctly across all candidates in each scenario.
+    df = add_relative_features(df)
+    print("After adding relative features:", df.shape)
+
     
-    # 2) Define grouping + targets
+    # 3) Define grouping + targets
    
     group_col = "scenario_id"
     target_class_col = "is_top_choice"
     target_rank_col = "target_rank"
 
     
-    # 3) Define columns to exclude from model inputs
+    # 4) Define columns to exclude from model inputs
     
     exclude_from_features = [
         "scenario_id",       # grouping only
@@ -66,7 +119,7 @@ def main() -> None:
     ]
 
     
-    # 4) Define numerical and categorical feature groups
+    # 5) Define numerical and categorical feature groups
     
     num_cols = [
         "aircraft_lat",
@@ -92,6 +145,9 @@ def main() -> None:
         "slot_restricted",
         "distance_km",
         "runway_margin_m",
+        "distance_rank",
+        "range_coverage_ratio",
+        "runway_rank",
     ]
 
     cat_cols = [
@@ -112,7 +168,7 @@ def main() -> None:
     ]
 
     
-    # 5) Build feature column list and validate groups
+    # 6) Build feature column list and validate groups
     
     feature_cols = [c for c in df.columns if c not in exclude_from_features]
 
@@ -148,7 +204,7 @@ def main() -> None:
         )
 
     
-    # 6) Re-split by scenario_id (NOT by rows)
+    # 7) Re-split by scenario_id (NOT by rows)
     
     scenario_ids = df[group_col].unique()
 
@@ -177,7 +233,7 @@ def main() -> None:
     print("Test scenarios:", test_df[group_col].nunique())
 
     
-    # 7) Leakage check across splits
+    # 8) Leakage check across splits
     
     train_scenarios = set(train_df[group_col].unique())
     val_scenarios = set(val_df[group_col].unique())
@@ -195,7 +251,7 @@ def main() -> None:
         raise ValueError("Leakage detected between val and test scenario IDs.")
 
     
-    # 8) Prepare X / y
+    # 9) Prepare X / y
     
     X_train = train_df[feature_cols]
     X_val = val_df[feature_cols]
@@ -222,7 +278,7 @@ def main() -> None:
     print("rank_test non-null:", int(rank_test.notna().sum()))
 
     
-    # 9) Build preprocessors
+    # 10) Build preprocessors
     
     # Logistic Regression preprocessor:
     # - scale numeric features
@@ -262,7 +318,7 @@ def main() -> None:
     print("Tree preprocessed test shape:", X_test_tree.shape)
 
     
-    # 10) Save split CSVs for traceability
+    # 11) Save split CSVs for traceability
     
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 

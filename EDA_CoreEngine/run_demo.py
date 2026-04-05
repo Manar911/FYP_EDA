@@ -9,12 +9,17 @@ decision log, and prints:
 - Their score + key features
 - Their explanation reasons
 """
-
 from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parent / "src"))
+
 
 from eda.airport_db import load_airports
 from eda.pipeline import run_pipeline
-from eda.scenario import Scenario, EmergencyType
+from eda.scenario import Scenario, EmergencyType, FuelState, BindingSide
 from eda.explanation import generate_explanation
 from eda.logger import save_decision_report_json
 
@@ -25,17 +30,27 @@ def main() -> None:
 
     # Demo scenario
     scenario = Scenario(
-        aircraft_lat=26.2708,  # Bahrain area example
-        aircraft_lon=50.6336,
-        required_runway_m=3000,
-        emergency_type=EmergencyType.FUEL,
-    )
+    aircraft_lat=26.2708, #Bahrain area example
+    aircraft_lon=50.6336,
+    required_runway_m=3000,
+    emergency_type=EmergencyType.FUEL,
+
+    aircraft_type="A320",
+    fuel_state=FuelState.LOW,
+    fuel_multiplier=0.90,
+
+    max_range_km=3000.0,
+    aircraft_adjusted_range_km=5490.0,
+    usable_range_km=3000.0,
+    extended_range_km=3500.0,
+    binding_side=BindingSide.EMERGENCY,
+)
 
     report = run_pipeline(scenario)
     log_path = save_decision_report_json(report)
 
     print("=" * 60)
-    print("EDA Core Engine Demo (Increment 1)")
+    print("EDA Core Engine Demo (Increment 2)")
     print("=" * 60)
     print(f"Emergency: {report.scenario.emergency_type.value}")
     print(f"Aircraft position: ({report.scenario.aircraft_lat}, {report.scenario.aircraft_lon})")
