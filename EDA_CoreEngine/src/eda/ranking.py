@@ -29,6 +29,8 @@ from eda.config import (
     RUNWAY_WEIGHT,
     MEDICAL_BONUS,
     RESCUE_BONUS,
+    MAINTENANCE_BONUS,
+    ILS_BONUS,
 )
 
 
@@ -176,19 +178,101 @@ def score_airport(
     bonus_medical: float = MEDICAL_BONUS,
     bonus_rescue: float = RESCUE_BONUS,
 ) -> float:
+    """
+    Emergency-type aware weight adjustment.
+
+    Different emergencies have different operational
+    priorities. The default weights from config.py are
+    overridden here based on what matters most for each
+    emergency category.
+
+    FUEL: Every extra kilometre burns critically low fuel.
+          Distance is the dominant priority. Infrastructure
+          advantages of farther airports do not justify the
+          additional fuel burn.
+
+    MEDICAL: Medical facility availability is the dominant
+             priority. A nearby airport with no medical
+             capability is less useful than a slightly
+             farther airport with full medical support.
+             The MEDICAL_BONUS handles the facility signal.
+
+    MECHANICAL / TECHNICAL: Maintenance capability matters
+             most. Distance and runway are secondary to
+             whether the airport can support the aircraft.
+
+    WEATHER: Instrument approach quality (ILS) and runway
+             length matter more in degraded visibility.
+             Weather reporting capability is also rewarded
+             as it gives the crew accurate approach data.
+
+    SECURITY: Default weights apply. Security emergencies
+              require rapid diversion but do not have a
+              single dominant infrastructure requirement
+              beyond the standard filter constraints.
+
+    OPERATIONAL_CONSTRAINTS: Default weights apply.
+              These are generally lower-urgency diversions
+              where the standard balance is appropriate.
+    """
 
     score = 0.0
+
+    if emergency_type == EmergencyType.FUEL:
+        # Distance is critical — land as soon as safely possible
+        w_distance = 0.80
+        w_runway = 0.20
+
+    elif emergency_type == EmergencyType.MEDICAL:
+        # Medical facility bonus dominates — reduce base weights
+        # to give the bonus more relative influence
+        w_distance = 0.50
+        w_runway = 0.20
+
+    elif emergency_type in (EmergencyType.MECHANICAL, EmergencyType.TECHNICAL):
+        # Maintenance capability matters — moderate distance,
+        # slightly increased runway weight for safety margin
+        w_distance = 0.60
+        w_runway = 0.25
+
+    elif emergency_type == EmergencyType.WEATHER:
+        # Instrument approach and runway length matter more
+        # in degraded visibility conditions
+        w_distance = 0.55
+        w_runway = 0.30
 
     # Base score
     score += w_distance * _score_distance(features.distance_km)
     score += w_runway * _score_runway_margin(features.runway_margin_m)
 
-    # Bonuses
+    
+    # Capability bonuses
+    
+
+    # Medical bonus — critical for medical emergencies
     if emergency_type == EmergencyType.MEDICAL and features.has_medical:
         score += bonus_medical
 
+    # Rescue capability — always beneficial
     if features.has_rescue:
         score += bonus_rescue
+
+    # Maintenance bonus — critical for mechanical/technical
+    if emergency_type in (EmergencyType.MECHANICAL, EmergencyType.TECHNICAL):
+        if airport.has_maintenance:
+            score += MAINTENANCE_BONUS
+
+    # ILS bonus — critical for weather emergencies
+    if emergency_type == EmergencyType.WEATHER:
+        if airport.has_ils:
+            score += ILS_BONUS
+        # Weather reporting gives crew accurate approach data
+        if airport.weather_reporting:
+            score += 0.10
+
+    
+    # Distance zone and operational penalties
+    
 
     # Soft last-resort penalty for extended-range candidates
     score -= _distance_zone_penalty(distance_zone)
