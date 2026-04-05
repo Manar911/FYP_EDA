@@ -114,6 +114,9 @@ def build_feature_lists() -> tuple[list[str], list[str], list[str]]:
         "slot_restricted",
         "distance_km",
         "runway_margin_m",
+         "distance_rank",        # rank of this airport by distance within scenario
+        "range_coverage_ratio", # usable_range_km / distance_km — fuel urgency signal
+        "runway_rank",          # rank of this airport by runway length within scenario
     ]
 
     # Categorical features (must be encoded)

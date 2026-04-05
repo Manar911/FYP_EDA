@@ -86,7 +86,9 @@ def build_feature_lists():
         "has_ils","has_medical","has_rescue","has_firefighting",
         "has_maintenance","fuel_available","open_24h","is_international",
         "tower_available","weather_reporting","slot_restricted",
-        "distance_km","runway_margin_m"
+        "distance_km","runway_margin_m","distance_rank",
+        "range_coverage_ratio",
+        "runway_rank",
     ]
 
     cat_cols = [
