@@ -20,3 +20,6 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Generated data — too large for GitHub
+data_generated/training_3000/
