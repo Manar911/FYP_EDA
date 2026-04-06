@@ -2,7 +2,7 @@ from eda.dataset_builder import build_and_save_dataset
 
 summary = build_and_save_dataset(
     scenario_count=1000,
-    output_dir="data_generated/training_1000",
+    output_dir="data_generated/training_3000",
     scenario_seed=42,
     split_seed=42,
 )
