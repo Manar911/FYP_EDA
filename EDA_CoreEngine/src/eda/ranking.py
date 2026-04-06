@@ -179,41 +179,50 @@ def score_airport(
     bonus_rescue: float = RESCUE_BONUS,
 ) -> float:
     """
-    Emergency-type aware weight adjustment.
+    Emergency-type aware scoring.
 
-    Different emergencies have different operational
-    priorities. The default weights from config.py are
-    overridden here based on what matters most for each
-    emergency category.
+    Each emergency type has a distinct priority profile
+    controlling both base weights and which capability
+    bonuses are active.
 
-    FUEL: Every extra kilometre burns critically low fuel.
-          Distance is the dominant priority. Infrastructure
-          advantages of farther airports do not justify the
-          additional fuel burn.
+    FUEL: w_distance=0.80, w_runway=0.20.
+          Distance is dominant — every extra km burns
+          critically low fuel. Firefighting and fuel
+          availability bonuses apply. Rescue and 24h
+          bonuses also apply.
 
-    MEDICAL: Medical facility availability is the dominant
-             priority. A nearby airport with no medical
-             capability is less useful than a slightly
-             farther airport with full medical support.
-             The MEDICAL_BONUS handles the facility signal.
+    MEDICAL: w_distance=0.50, w_runway=0.20.
+          Medical facility availability is dominant.
+          Full medical and rescue bonuses apply.
+          A nearby airport with no medical capability
+          is less useful than a slightly farther one
+          with full medical support.
 
-    MECHANICAL / TECHNICAL: Maintenance capability matters
-             most. Distance and runway are secondary to
-             whether the airport can support the aircraft.
+    MECHANICAL / TECHNICAL: w_distance=0.60, w_runway=0.25.
+          Maintenance capability is dominant. Full
+          firefighting, rescue, and maintenance bonuses
+          apply. Distance and runway are secondary to
+          whether the airport can support the aircraft.
 
-    WEATHER: Instrument approach quality (ILS) and runway
-             length matter more in degraded visibility.
-             Weather reporting capability is also rewarded
-             as it gives the crew accurate approach data.
+    WEATHER: w_distance=0.65, w_runway=0.30.
+          ILS and runway length dominate in degraded
+          visibility. Distance weight is elevated so
+          proximity is not overridden by capability.
+          Rescue, firefighting, and 24h bonuses are
+          suppressed — only ILS (+0.25) and weather
+          reporting (+0.10) bonuses apply.
 
-    SECURITY: Default weights apply. Security emergencies
-              require rapid diversion but do not have a
-              single dominant infrastructure requirement
-              beyond the standard filter constraints.
+    SECURITY: w_distance=0.70, w_runway=0.25.
+          Rapid diversion is the priority — distance
+          is strongly dominant. Standard rescue and
+          24h bonuses still apply since ground response
+          teams are needed for security incidents.
 
-    OPERATIONAL_CONSTRAINTS: Default weights apply.
-              These are generally lower-urgency diversions
-              where the standard balance is appropriate.
+    OPERATIONAL_CONSTRAINTS: default weights (0.60/0.40).
+          Lower-urgency diversion. Balanced distance
+          and runway scoring. Standard bonuses apply
+          except rescue and firefighting which are
+          suppressed as infrastructure is not critical.
     """
 
     score = 0.0
@@ -231,8 +240,12 @@ def score_airport(
         w_runway = 0.25
 
     elif emergency_type == EmergencyType.WEATHER:
-        w_distance = 0.55
+        w_distance = 0.65
         w_runway = 0.30
+
+    elif emergency_type == EmergencyType.SECURITY:
+        w_distance = 0.70
+        w_runway = 0.25
 
     # Base score
     score += w_distance * _score_distance(features.distance_km)
@@ -257,10 +270,16 @@ def score_airport(
     # emergency response than standard category.
     # --------------------------------------------------
     if features.has_rescue:
-        if airport.rescue_category == "major":
-            score += bonus_rescue            # 0.20 — full bonus
+        if emergency_type not in (
+            EmergencyType.WEATHER,
+            EmergencyType.OPERATIONAL_CONSTRAINTS,
+        ):
+            if airport.rescue_category == "major":
+                score += bonus_rescue
+            else:
+                score += bonus_rescue * 0.50
         else:
-            score += bonus_rescue * 0.50    # 0.10 — standard category
+            score += 0.03
 
     # --------------------------------------------------
     # Firefighting capability bonus.
@@ -268,12 +287,17 @@ def score_airport(
     # fire risk is elevated. Always beneficial otherwise.
     # --------------------------------------------------
     if airport.has_firefighting:
-        if emergency_type in (EmergencyType.FUEL,
-                              EmergencyType.MECHANICAL,
-                              EmergencyType.TECHNICAL):
-            score += 0.15    # elevated importance for fire-risk emergencies
-        else:
-            score += 0.05    # minor general benefit
+        if emergency_type in (
+            EmergencyType.FUEL,
+            EmergencyType.MECHANICAL,
+            EmergencyType.TECHNICAL,
+        ):
+            score += 0.15
+        elif emergency_type not in (
+            EmergencyType.WEATHER,
+            EmergencyType.OPERATIONAL_CONSTRAINTS,
+        ):
+            score += 0.05
 
     # --------------------------------------------------
     # Fuel availability bonus.
@@ -290,7 +314,10 @@ def score_airport(
     # emergency diversions regardless of time of day.
     # --------------------------------------------------
     if airport.open_24h:
-        score += 0.05
+        if emergency_type != EmergencyType.WEATHER:
+            score += 0.05
+        else:
+            score += 0.01
 
     # --------------------------------------------------
     # Maintenance bonus — critical for mechanical/technical
