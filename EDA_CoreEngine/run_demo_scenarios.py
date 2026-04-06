@@ -167,14 +167,19 @@ def run_scenario(scenario_def: dict) -> None:
         f = opt.features
         explanation = generate_explanation(opt, scenario.emergency_type)
 
-        print(f"  {i}. {a.icao} — {a.name} ({a.country})")
+        print(f"  {i}. {a.icao} — {a.name} ({a.city}, {a.country})")
         print(f"     Score:          {opt.score:.4f}")
         print(f"     Distance:       {f.distance_km:.1f} km")
-        print(f"     Runway:         {a.runway_length_m} m (margin: {f.runway_margin_m:+d} m)")
         print(f"     Zone:           {opt.distance_zone}")
-        print(f"     Medical:        {'Yes' if a.has_medical else 'No'}")
-        print(f"     Maintenance:    {'Yes' if a.has_maintenance else 'No'}")
+        print(f"     Runway:         {a.runway_length_m} m (margin: {f.runway_margin_m:+d} m)")
         print(f"     ILS:            {'Yes' if a.has_ils else 'No'}")
+        print(f"     Medical:        {'Yes' if a.has_medical else 'No'} ({a.medical_level})")
+        print(f"     Rescue:         {'Yes' if a.has_rescue else 'No'} ({a.rescue_category})")
+        print(f"     Firefighting:   {'Yes' if a.has_firefighting else 'No'}")
+        print(f"     Maintenance:    {'Yes' if a.has_maintenance else 'No'}")
+        print(f"     Fuel available: {'Yes' if a.fuel_available else 'No'}")
+        print(f"     Weather rep:    {'Yes' if a.weather_reporting else 'No'}")
+        print(f"     Open 24h:       {'Yes' if a.open_24h else 'No'}")
         print(f"     Why selected:")
         for reason in explanation.reasons:
             print(f"       • {reason}")

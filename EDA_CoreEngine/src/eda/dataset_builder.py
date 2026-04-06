@@ -83,6 +83,7 @@ def _generated_to_runtime_scenario(g: GeneratedScenario) -> Scenario:
         required_runway_m=g.required_runway_m,
         emergency_type=EmergencyType(g.emergency_type),
         aircraft_type=g.aircraft_type,
+        aircraft_category=g.aircraft_category,
         fuel_state=FuelState(g.fuel_state),
         fuel_multiplier=g.fuel_multiplier,
         max_range_km=g.max_range_km,
