@@ -3,19 +3,22 @@ run_demo_scenarios.py
 
 Multi-scenario demonstration for the EDA Core Engine (Increment 2).
 
-Covers 7 realistic emergency diversion scenarios across all emergency types:
+Covers 9 realistic emergency diversion scenarios across all 6 emergency types:
 
-    1. FUEL       — A320,        critical fuel,  over Bahrain Gulf
-    2. FUEL       — B777-300ER,  low fuel,       over Arabian Sea
-    3. MEDICAL    — B737-800,    normal fuel,    over Red Sea
-    4. MEDICAL    — A380-800,    normal fuel,    over Indian Ocean
-    5. MECHANICAL — B737-800,    low fuel,       over Persian Gulf
-    6. WEATHER    — A320,        normal fuel,    over Eastern Mediterranean
-    7. TECHNICAL  — B777-300ER,  low fuel,       over East Africa
+    1. FUEL                    — A320,        critical fuel,  over Bahrain Gulf
+    2. FUEL                    — B777-300ER,  low fuel,       over Arabian Sea
+    3. MEDICAL                 — B737-800,    normal fuel,    over Red Sea
+    4. MEDICAL                 — A380-800,    normal fuel,    over Indian Ocean
+    5. MECHANICAL              — B737-800,    low fuel,       over Persian Gulf
+    6. WEATHER                 — A320,        normal fuel,    over Eastern Mediterranean
+    7. TECHNICAL               — B777-300ER,  low fuel,       over East Africa
+    8. SECURITY                — A320,        normal fuel,    over Arabian Gulf
+    9. OPERATIONAL_CONSTRAINTS — B737-800,    normal fuel,    over North Africa
 
 Each scenario prints:
     - Scenario context (aircraft, position, emergency, fuel)
     - Top 3 diversion airports with scores, distances, and explanations
+    - Decision log saved to logs/
 """
 
 from __future__ import annotations
@@ -29,9 +32,8 @@ from eda.pipeline import run_pipeline
 from eda.scenario import EmergencyType, FuelState
 from eda.scenario_builder import build_scenario
 from eda.explanation import generate_explanation
+from eda.logger import save_decision_report_json
 
-
-# Scenario definitions
 
 SCENARIOS = [
     {
@@ -97,11 +99,29 @@ SCENARIOS = [
         "fuel_state": FuelState.LOW,
         "emergency_type": EmergencyType.TECHNICAL,
     },
+    {
+        "id": 8,
+        "label": "Security Emergency — A320 over Arabian Gulf (Normal Fuel)",
+        "aircraft_type": "A320",
+        "aircraft_lat": 24.5,
+        "aircraft_lon": 54.0,
+        "fuel_state": FuelState.NORMAL,
+        "emergency_type": EmergencyType.SECURITY,
+    },
+    {
+        "id": 9,
+        "label": "Operational Constraints — B737-800 over North Africa (Normal Fuel)",
+        "aircraft_type": "B737-800",
+        "aircraft_lat": 30.0,
+        "aircraft_lon": 20.0,
+        "fuel_state": FuelState.NORMAL,
+        "emergency_type": EmergencyType.OPERATIONAL_CONSTRAINTS,
+    },
 ]
 
 
 def run_scenario(scenario_def: dict) -> None:
-    """Runs a single scenario and prints formatted results."""
+    """Runs a single scenario, prints results, and saves decision log."""
 
     print()
     print("=" * 70)
@@ -125,6 +145,10 @@ def run_scenario(scenario_def: dict) -> None:
     print("-" * 70)
 
     report = run_pipeline(scenario)
+
+    # Save decision log using existing logger
+    log_path = save_decision_report_json(report)
+    print(f"  Log saved to:    {log_path}")
 
     print(f"  Airports loaded:   {report.total_airports}")
     print(f"  Feasible airports: {len(report.feasible)}")
