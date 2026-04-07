@@ -1,7 +1,7 @@
 """
 logger.py
 
-JSON logging for the EDA Core Engine (Increment 1).
+JSON logging for the EDA Core Engine.
 
 Purpose:
 - Save a full structured decision log for each scenario run.
@@ -12,7 +12,7 @@ Each scenario run is stored as one JSON file containing:
 - evaluated airports
 - feasible airports
 - ranked results
-- explanations
+- structured explanations
 """
 
 from __future__ import annotations
@@ -38,14 +38,31 @@ def decision_report_to_dict(report: DecisionReport) -> dict[str, Any]:
     ranked_with_explanations = []
 
     for ranked in report.ranked_top:
-        explanation = generate_explanation(ranked, report.scenario.emergency_type)
+        feasibility_reason = next(
+            item.feasibility.reason
+            for item in report.evaluated
+            if item.airport.icao == ranked.airport.icao
+        )
+
+        explanation = generate_explanation(
+            ranked,
+            report.scenario.emergency_type,
+            feasibility_reason,
+        )
 
         ranked_with_explanations.append(
             {
                 "airport": asdict(ranked.airport),
                 "features": asdict(ranked.features),
                 "score": ranked.score,
-                "explanation": explanation.reasons,
+                "distance_zone": ranked.distance_zone,
+                "explanation": {
+                    "airport_icao": explanation.airport_icao,
+                    "feasibility_reasons": explanation.feasibility_reasons,
+                    "ranking_reasons": explanation.ranking_reasons,
+                    "summary": explanation.summary,
+                    "caution": explanation.caution,
+                },
             }
         )
 
@@ -60,7 +77,6 @@ def decision_report_to_dict(report: DecisionReport) -> dict[str, Any]:
         )
 
     feasible = []
-
     for airport, features, distance_zone in report.feasible:
         feasible.append(
             {
@@ -72,22 +88,25 @@ def decision_report_to_dict(report: DecisionReport) -> dict[str, Any]:
 
     return {
         "timestamp": datetime.now().isoformat(),
-
         "scenario": {
             "aircraft_lat": report.scenario.aircraft_lat,
             "aircraft_lon": report.scenario.aircraft_lon,
             "required_runway_m": report.scenario.required_runway_m,
             "emergency_type": report.scenario.emergency_type.value,
+            "aircraft_type": report.scenario.aircraft_type,
+            "aircraft_category": report.scenario.aircraft_category,
+            "fuel_state": report.scenario.fuel_state.value,
+            "fuel_multiplier": report.scenario.fuel_multiplier,
+            "max_range_km": report.scenario.max_range_km,
+            "aircraft_adjusted_range_km": report.scenario.aircraft_adjusted_range_km,
+            "usable_range_km": report.scenario.usable_range_km,
+            "extended_range_km": report.scenario.extended_range_km,
+            "binding_side": report.scenario.binding_side.value,
         },
-
         "selected_option": ranked_with_explanations[0] if ranked_with_explanations else None,
-
         "total_airports": report.total_airports,
-
         "evaluated": evaluated,
-
         "feasible": feasible,
-
         "ranked_top": ranked_with_explanations,
     }
 

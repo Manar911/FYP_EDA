@@ -1,0 +1,146 @@
+{
+  "model_path": "models\\lightgbm_pipeline.joblib",
+  "data_path": "data_generated\\ml_dataset\\test_ml.csv",
+  "rows_analysed": 186,
+  "scenarios_analysed": 30,
+  "scenario_ids_analysed": [
+    "S00104",
+    "S00124",
+    "S00175",
+    "S00211",
+    "S00293",
+    "S00313",
+    "S00314",
+    "S00317",
+    "S00355",
+    "S00417",
+    "S00468",
+    "S00469",
+    "S00530",
+    "S00568",
+    "S00606",
+    "S00693",
+    "S00753",
+    "S00762",
+    "S00791",
+    "S01009",
+    "S01047",
+    "S01106",
+    "S01206",
+    "S01306",
+    "S01308",
+    "S01347",
+    "S01348",
+    "S01419",
+    "S01442",
+    "S01463"
+  ],
+  "local_example_index": 771,
+  "local_example_scenario_id": "S01106",
+  "local_example_airport_icao": "HECA",
+  "local_example_predicted_score": 0.9996676819733079,
+  "top_10_global_features": [
+    {
+      "feature": "distance_rank",
+      "mean_abs_shap": 2.2892358301416893
+    },
+    {
+      "feature": "range_coverage_ratio",
+      "mean_abs_shap": 0.7290254761667576
+    },
+    {
+      "feature": "distance_km",
+      "mean_abs_shap": 0.5125476817906112
+    },
+    {
+      "feature": "runway_rank",
+      "mean_abs_shap": 0.4767425617692027
+    },
+    {
+      "feature": "runway_margin_m",
+      "mean_abs_shap": 0.40613912114885486
+    },
+    {
+      "feature": "runway_length_m",
+      "mean_abs_shap": 0.28770931832584296
+    },
+    {
+      "feature": "emergency_type",
+      "mean_abs_shap": 0.2588935645139867
+    },
+    {
+      "feature": "aircraft_lon",
+      "mean_abs_shap": 0.2445494397034607
+    },
+    {
+      "feature": "aircraft_lat",
+      "mean_abs_shap": 0.23906886499930102
+    },
+    {
+      "feature": "has_maintenance",
+      "mean_abs_shap": 0.129457879333328
+    }
+  ],
+  "top_10_local_contributors": [
+    {
+      "feature": "distance_rank",
+      "shap_value": 6.622470713457333,
+      "abs_shap": 6.622470713457333,
+      "raw_value": 1
+    },
+    {
+      "feature": "range_coverage_ratio",
+      "shap_value": 2.2364371654283386,
+      "abs_shap": 2.2364371654283386,
+      "raw_value": 24.9851
+    },
+    {
+      "feature": "distance_km",
+      "shap_value": 1.3787759031076845,
+      "abs_shap": 1.3787759031076845,
+      "raw_value": 34.220388
+    },
+    {
+      "feature": "runway_rank",
+      "shap_value": 0.48811341219193966,
+      "abs_shap": 0.48811341219193966,
+      "raw_value": 2
+    },
+    {
+      "feature": "runway_margin_m",
+      "shap_value": 0.4200265524942628,
+      "abs_shap": 0.4200265524942628,
+      "raw_value": 1663
+    },
+    {
+      "feature": "runway_length_m",
+      "shap_value": 0.38998552312073265,
+      "abs_shap": 0.38998552312073265,
+      "raw_value": 4000
+    },
+    {
+      "feature": "aircraft_lon",
+      "shap_value": 0.3131703762676061,
+      "abs_shap": 0.3131703762676061,
+      "raw_value": 31.713028
+    },
+    {
+      "feature": "has_maintenance",
+      "shap_value": 0.21960232987673994,
+      "abs_shap": 0.21960232987673994,
+      "raw_value": 1
+    },
+    {
+      "feature": "aircraft_lat",
+      "shap_value": 0.12493562776545919,
+      "abs_shap": 0.12493562776545919,
+      "raw_value": 30.252731
+    },
+    {
+      "feature": "slot_restricted",
+      "shap_value": 0.1164701983030661,
+      "abs_shap": 0.1164701983030661,
+      "raw_value": 0
+    }
+  ]
+}
