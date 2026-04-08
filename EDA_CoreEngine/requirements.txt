@@ -1,0 +1,9 @@
+# EDA Core Engine — Raspberry Pi deployment dependencies
+# Install with: pip install -r requirements_pi.txt --break-system-packages
+
+PySide6>=6.5.0
+lightgbm>=3.3.0
+scikit-learn>=1.0.0
+pandas>=1.5.0
+numpy>=1.21.0
+joblib
