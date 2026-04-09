@@ -1,247 +1,88 @@
-"""
-logs_screen.py
-
-Runtime log viewer screen.
-
-Displays the in-memory deque of compact decision log entries.
-Max 200 entries — oldest auto-evicted (deque maxlen).
-No file I/O at render time — pure in-memory display.
-"""
-
 from __future__ import annotations
-
 from collections import deque
-from datetime import datetime
 from typing import Any
-
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QPushButton, QListWidget,
-    QListWidgetItem, QMessageBox,
-)
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget, QListWidgetItem, QMessageBox
 from PySide6.QtCore import Signal, Qt
-
 from ui.theme import Colour, Font, Spacing
-
 MAX_LOGS = 200
-
-
 class LogsScreen(QWidget):
-    """
-    Displays the runtime log buffer.
-    Entries are compact dicts from decision_report_to_compact_dict().
-    """
-
     back_requested = Signal()
-
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, parent=None):
         super().__init__(parent)
-        # In-memory buffer — deque handles retention automatically
         self._buffer: deque[dict[str, Any]] = deque(maxlen=MAX_LOGS)
         self._setup_ui()
-
-    # ── Public API ─────────────────────────────────────────────────────────────
-
-    def add_entry(self, compact_log: dict[str, Any]) -> None:
-        """
-        Add one compact log entry to the buffer and refresh the list.
-        Called after each successful inference + pilot confirmation.
-        """
-        self._buffer.appendleft(compact_log)
-        self._refresh_list()
-        self._update_count()
-
-    def clear(self) -> None:
+    def add_entry(self, log):
+        self._buffer.appendleft(log)
+        self._refresh()
+        self._count_lbl.setText(f"{len(self._buffer)} / {MAX_LOGS}")
+    def clear(self):
         self._buffer.clear()
         self._list.clear()
-        self._update_count()
-
-    # ── UI construction ────────────────────────────────────────────────────────
-
-    def _setup_ui(self) -> None:
+        self._count_lbl.setText(f"0 / {MAX_LOGS}")
+        self._update_vis()
+    def _setup_ui(self):
         root = QVBoxLayout(self)
-        root.setContentsMargins(0, 0, 0, 0)
+        root.setContentsMargins(0,0,0,0)
         root.setSpacing(0)
-
         root.addWidget(self._build_header())
-
         body = QWidget()
-        body_layout = QVBoxLayout(body)
-        body_layout.setContentsMargins(
-            Spacing.LG, Spacing.LG, Spacing.LG, Spacing.LG
-        )
-        body_layout.setSpacing(Spacing.MD)
-
+        lay = QVBoxLayout(body)
+        lay.setContentsMargins(Spacing.LG,Spacing.LG,Spacing.LG,Spacing.LG)
+        lay.setSpacing(Spacing.MD)
         self._list = QListWidget()
         self._list.setAlternatingRowColors(True)
         self._list.setSelectionMode(QListWidget.SelectionMode.NoSelection)
-        self._list.setStyleSheet(f"""
-            QListWidget {{
-                background-color: {Colour.BG_SECONDARY};
-                border: 1px solid {Colour.BORDER_DEFAULT};
-                border-radius: {Spacing.CARD_RADIUS}px;
-                color: {Colour.TEXT_PRIMARY};
-                font-size: {Font.SIZE_BODY}px;
-                outline: none;
-            }}
-            QListWidget::item {{
-                padding: 10px 14px;
-                border-bottom: 1px solid {Colour.DIVIDER};
-            }}
-            QListWidget::item:alternate {{
-                background-color: {Colour.LOG_ROW_ALT};
-            }}
-        """)
-        body_layout.addWidget(self._list, stretch=1)
-
-        # Empty state label
-        self._empty_label = QLabel("No decisions logged yet.")
-        self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._empty_label.setStyleSheet(f"""
-            color: {Colour.TEXT_MUTED};
-            font-size: {Font.SIZE_MEDIUM}px;
-            padding: 40px;
-        """)
-        body_layout.addWidget(self._empty_label)
-
-        # Clear button
-        clear_btn = QPushButton("CLEAR LOG")
-        clear_btn.setFixedHeight(Spacing.TOUCH_MIN)
-        clear_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {Colour.BACK};
-                color: {Colour.TEXT_SECONDARY};
-                border: 1px solid {Colour.BORDER_DEFAULT};
-                border-radius: {Spacing.BUTTON_RADIUS}px;
-                font-size: {Font.SIZE_BODY}px;
-            }}
-            QPushButton:pressed {{
-                background-color: {Colour.BACK_HOVER};
-            }}
-        """)
-        clear_btn.clicked.connect(self._on_clear)
-        body_layout.addWidget(clear_btn)
-
+        lay.addWidget(self._list, stretch=1)
+        self._empty = QLabel("No decisions logged yet.")
+        self._empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._empty.setStyleSheet(f"color: {Colour.TEXT_MUTED}; font-size: {Font.SZ_MD}px; padding: 40px; background: transparent;")
+        lay.addWidget(self._empty)
+        clr = QPushButton("Clear Log")
+        clr.setFixedHeight(Spacing.TOUCH_MIN)
+        clr.setStyleSheet(f"QPushButton {{ background: transparent; color: {Colour.AMBER}; border: 1px solid {Colour.AMBER_DIM}; border-radius: {Spacing.RADIUS_SM}px; font-size: {Font.SZ_BODY}px; font-weight: bold; }} QPushButton:pressed {{ background: {Colour.AMBER_BG}; }}")
+        clr.clicked.connect(self._on_clear)
+        lay.addWidget(clr)
         root.addWidget(body, stretch=1)
-
-        self._update_visibility()
-
-    def _build_header(self) -> QWidget:
-        header = QWidget()
-        header.setFixedHeight(Spacing.HEADER_HEIGHT)
-        header.setStyleSheet(f"""
-            background-color: {Colour.BG_HEADER};
-            border-bottom: 1px solid {Colour.BORDER_DEFAULT};
-        """)
-
-        layout = QHBoxLayout(header)
-        layout.setContentsMargins(Spacing.LG, 0, Spacing.LG, 0)
-        layout.setSpacing(Spacing.MD)
-
-        back_btn = QPushButton("◀  BACK")
-        back_btn.setFixedHeight(36)
-        back_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {Colour.BACK};
-                color: {Colour.TEXT_SECONDARY};
-                border: 1px solid {Colour.BORDER_DEFAULT};
-                border-radius: 4px;
-                font-size: {Font.SIZE_SMALL}px;
-                padding: 0 14px;
-            }}
-            QPushButton:pressed {{
-                background-color: {Colour.BACK_HOVER};
-            }}
-        """)
-        back_btn.clicked.connect(self.back_requested.emit)
-        layout.addWidget(back_btn)
-
-        title = QLabel("RUNTIME LOG")
-        title.setStyleSheet(f"""
-            color: {Colour.TEXT_PRIMARY};
-            font-size: {Font.SIZE_MEDIUM}px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        """)
-        layout.addWidget(title, stretch=1)
-
-        self._count_label = QLabel(f"0 / {MAX_LOGS}")
-        self._count_label.setStyleSheet(f"""
-            color: {Colour.TEXT_MUTED};
-            font-size: {Font.SIZE_SMALL}px;
-        """)
-        layout.addWidget(self._count_label)
-
-        return header
-
-    # ── Helpers ────────────────────────────────────────────────────────────────
-
-    def _refresh_list(self) -> None:
+        self._update_vis()
+    def _build_header(self):
+        h = QWidget()
+        h.setFixedHeight(Spacing.HEADER_H)
+        h.setStyleSheet(f"background-color: {Colour.BG_HEADER}; border-bottom: 1px solid {Colour.BORDER};")
+        lay = QHBoxLayout(h)
+        lay.setContentsMargins(Spacing.LG,0,Spacing.LG,0)
+        lay.setSpacing(Spacing.MD)
+        back = QPushButton("Back")
+        back.setFixedHeight(36)
+        back.setStyleSheet(f"QPushButton {{ background: transparent; color: {Colour.TEXT_SECONDARY}; border: 1px solid {Colour.BORDER}; border-radius: {Spacing.RADIUS_SM}px; font-size: {Font.SZ_SM}px; padding: 0 14px; }} QPushButton:pressed {{ background: {Colour.BTN_PRESSED}; }}")
+        back.clicked.connect(self.back_requested.emit)
+        lay.addWidget(back)
+        t = QLabel("Runtime Log")
+        t.setStyleSheet(f"color: {Colour.CYAN}; font-size: {Font.SZ_MD}px; font-weight: bold; background: transparent;")
+        lay.addWidget(t, stretch=1)
+        self._count_lbl = QLabel(f"0 / {MAX_LOGS}")
+        self._count_lbl.setStyleSheet(f"color: {Colour.TEXT_MUTED}; font-size: {Font.SZ_SM}px; background: transparent;")
+        lay.addWidget(self._count_lbl)
+        return h
+    def _refresh(self):
         self._list.clear()
-        for entry in self._buffer:
-            text = self._format_entry(entry)
-            item = QListWidgetItem(text)
-            item.setForeground(Qt.GlobalColor.white)
-            self._list.addItem(item)
-        self._update_visibility()
-
-    def _format_entry(self, entry: dict[str, Any]) -> str:
-        ts        = entry.get("timestamp", "")[:19].replace("T", "  ")
-        scenario  = entry.get("scenario", {})
-        emergency = scenario.get("emergency_type", "").upper()
-        aircraft  = scenario.get("aircraft_type", "")
-        fuel      = scenario.get("fuel_state", "").upper()
-
-        selected  = entry.get("selected_option") or {}
-        icao      = selected.get("airport_icao", "—")
-        score_val = selected.get("score", 0.0)
-        dist      = selected.get("distance_km", 0.0)
-        score_pct = int(score_val * 100)
-
-        feasible  = entry.get("feasible_airports_count", "?")
-
-        return (
-            f"{ts}   {emergency:<14} {aircraft:<12} "
-            f"→  {icao}  ({score_pct}%)   "
-            f"{dist:.1f} km   {fuel}   {feasible} feasible"
-        )
-
-    def _update_count(self) -> None:
-        count = len(self._buffer)
-        self._count_label.setText(f"{count} / {MAX_LOGS}")
-
-    def _update_visibility(self) -> None:
-        has_entries = len(self._buffer) > 0
-        self._list.setVisible(has_entries)
-        self._empty_label.setVisible(not has_entries)
-
-    def _on_clear(self) -> None:
-        if not self._buffer:
-            return
+        for e in self._buffer:
+            self._list.addItem(QListWidgetItem(self._fmt(e)))
+        self._update_vis()
+    def _fmt(self, e):
+        ts = e.get("timestamp","")[:19].replace("T","  ")
+        sc = e.get("scenario",{})
+        sel = e.get("selected_option") or {}
+        return (f"{ts}   {sc.get('emergency_type','').upper():<13}  {sc.get('aircraft_type',''):<10}  "
+                f"→  {sel.get('airport_icao','—')}  {int(sel.get('score',0)*100)}%  "
+                f"{sel.get('distance_km',0):.0f} km   {sc.get('fuel_state','').upper()}")
+    def _update_vis(self):
+        has = len(self._buffer) > 0
+        self._list.setVisible(has)
+        self._empty.setVisible(not has)
+    def _on_clear(self):
+        if not self._buffer: return
         msg = QMessageBox(self)
         msg.setWindowTitle("Clear Log")
         msg.setText(f"Clear all {len(self._buffer)} log entries?")
-        msg.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        msg.setDefaultButton(QMessageBox.StandardButton.No)
-        msg.setStyleSheet(f"""
-            QMessageBox {{
-                background-color: {Colour.BG_SECONDARY};
-                color: {Colour.TEXT_PRIMARY};
-            }}
-            QLabel {{
-                color: {Colour.TEXT_PRIMARY};
-                font-size: {Font.SIZE_BODY}px;
-            }}
-            QPushButton {{
-                background-color: {Colour.BACK};
-                color: {Colour.TEXT_PRIMARY};
-                border: 1px solid {Colour.BORDER_DEFAULT};
-                border-radius: 4px;
-                padding: 6px 20px;
-                font-size: {Font.SIZE_BODY}px;
-            }}
-        """)
-        if msg.exec() == QMessageBox.StandardButton.Yes:
-            self.clear()
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if msg.exec() == QMessageBox.StandardButton.Yes: self.clear()

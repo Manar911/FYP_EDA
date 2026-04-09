@@ -1,450 +1,691 @@
 """
-input_screen.py
+input_screen.py  —  EDA 
 
-Scenario input screen for the EDA embedded UI.
-
-Allows the pilot/dispatcher to select:
-- Aircraft type (horizontal scrollable picker)
-- Latitude and longitude (numeric steppers)
-- Fuel state (3 large touch buttons)
-- Emergency type (7 large touch buttons)
-
-Then tap RUN to trigger inference.
-No keyboard input required except for lat/lon numeric entry.
+Changes:
+- Unified selected button style (all use CYAN — no per-button colour on selection)
+- UTC clock in header
+- Map size policy fixed
+- All other v3 features retained
 """
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QPushButton, QScrollArea, QLineEdit,
-    QFrame, QSizePolicy,
+    QFrame, QListWidget,
 )
-from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QDoubleValidator
+from PySide6.QtCore import Signal, Qt, QTimer
 
 from eda.scenario import EmergencyType, FuelState
 from eda.scenario_builder import list_available_aircraft
 from ui.theme import Colour, Font, Spacing
+from ui.widgets.numpad_widget import NumpadWidget
+from ui.widgets.map_widget import MapWidget
+from ui.widgets.icao_keyboard import ICAOKeyboard
 
 
-# ── Emergency type display labels ─────────────────────────────────────────────
-EMERGENCY_LABELS = {
-    EmergencyType.FUEL:                  "FUEL",
-    EmergencyType.MEDICAL:               "MEDICAL",
-    EmergencyType.MECHANICAL:            "MECHANICAL",
-    EmergencyType.TECHNICAL:             "TECHNICAL",
-    EmergencyType.WEATHER:               "WEATHER",
-    EmergencyType.SECURITY:              "SECURITY",
+EMERGENCY_CFG = {
+    EmergencyType.FUEL:                    "FUEL",
+    EmergencyType.MEDICAL:                 "MEDICAL",
+    EmergencyType.MECHANICAL:              "MECHANICAL",
+    EmergencyType.TECHNICAL:               "TECHNICAL",
+    EmergencyType.WEATHER:                 "WEATHER",
+    EmergencyType.SECURITY:                "SECURITY",
     EmergencyType.OPERATIONAL_CONSTRAINTS: "OPERATIONAL",
 }
 
-FUEL_COLOURS = {
-    FuelState.NORMAL:   Colour.FUEL_NORMAL,
-    FuelState.LOW:      Colour.FUEL_LOW,
-    FuelState.CRITICAL: Colour.FUEL_CRITICAL,
+FUEL_CFG = {
+    FuelState.NORMAL:   ("NORMAL",   Colour.GREEN,  Colour.GREEN_DIM),
+    FuelState.LOW:      ("LOW",      Colour.AMBER,  Colour.AMBER_DIM),
+    FuelState.CRITICAL: ("CRITICAL", Colour.RED,    Colour.RED_DIM),
 }
 
 
 class InputScreen(QWidget):
-    """
-    Full input screen. Emits run_requested with the five user inputs
-    when the pilot taps RUN.
-    """
-
-    run_requested = Signal(str, float, float, object, object)
-    # args: aircraft_type, lat, lon, FuelState, EmergencyType
-
+    run_requested  = Signal(str, float, float, object, object, list, list, list)
     logs_requested = Signal()
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self._selected_aircraft:  str | None = None
-        self._selected_fuel:      FuelState | None = None
-        self._selected_emergency: EmergencyType | None = None
-        self._aircraft_buttons:   dict[str, QPushButton] = {}
-        self._fuel_buttons:       dict[FuelState, QPushButton] = {}
-        self._emergency_buttons:  dict[EmergencyType, QPushButton] = {}
+        self._aircraft: str | None = None
+        self._fuel: FuelState | None = None
+        self._emergency: EmergencyType | None = None
+        self._lat = 26.2708
+        self._lon = 50.6336
+        self._acft_btns: dict[str, QPushButton] = {}
+        self._fuel_btns: dict[FuelState, QPushButton] = {}
+        self._emrg_btns: dict[EmergencyType, QPushButton] = {}
+        self._excluded_icaos: list[str] = []
         self._setup_ui()
+        self._start_clock()
 
-    # ── UI construction ────────────────────────────────────────────────────────
+    # ── Clock ─────────────────────────────────────────────────────────────────
 
-    def _setup_ui(self) -> None:
+    def _start_clock(self):
+        self._clock_timer = QTimer()
+        self._clock_timer.timeout.connect(self._update_clock)
+        self._clock_timer.start(1000)
+        self._update_clock()
+
+    def _update_clock(self):
+        now = datetime.now(timezone.utc)
+        self._clock_label.setText(now.strftime("%d %b %Y    %H:%M:%S UTC"))
+
+    # ── Build UI ──────────────────────────────────────────────────────────────
+
+    def _setup_ui(self):
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
-
         root.addWidget(self._build_header())
         root.addWidget(self._build_body(), stretch=1)
-        root.addWidget(self._build_run_bar())
+        root.addWidget(self._build_footer())
 
-    def _build_header(self) -> QWidget:
-        header = QWidget()
-        header.setFixedHeight(Spacing.HEADER_HEIGHT)
-        header.setStyleSheet(f"background-color: {Colour.BG_HEADER};")
-
-        layout = QHBoxLayout(header)
-        layout.setContentsMargins(Spacing.LG, 0, Spacing.LG, 0)
+    def _build_header(self):
+        h = QWidget()
+        h.setFixedHeight(Spacing.HEADER_H)
+        h.setStyleSheet(f"""
+            background-color: {Colour.BG_HEADER};
+            border-bottom: 1px solid {Colour.BORDER};
+        """)
+        lay = QHBoxLayout(h)
+        lay.setContentsMargins(Spacing.LG, 0, Spacing.LG, 0)
 
         title = QLabel("EDA  —  Emergency Diversion Assistant")
         title.setStyleSheet(f"""
-            color: {Colour.TEXT_PRIMARY};
-            font-size: {Font.SIZE_MEDIUM}px;
+            color: {Colour.CYAN};
+            font-size: {Font.SZ_MD}px;
             font-weight: bold;
+            background: transparent;
         """)
-        layout.addWidget(title, stretch=1)
+        lay.addWidget(title, stretch=1)
 
-        logs_btn = QPushButton("LOGS")
-        logs_btn.setFixedHeight(36)
-        logs_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {Colour.BACK};
-                color: {Colour.TEXT_SECONDARY};
-                border: 1px solid {Colour.BORDER_DEFAULT};
-                border-radius: 4px;
-                font-size: {Font.SIZE_SMALL}px;
-                padding: 0 14px;
-            }}
-            QPushButton:pressed {{
-                background-color: {Colour.BACK_HOVER};
-            }}
+        # UTC clock — right aligned
+        self._clock_label = QLabel("")
+        self._clock_label.setStyleSheet(f"""
+            color: {Colour.TEXT_PRIMARY};
+            font-size: {Font.SZ_BODY}px;
+            font-family: "{Font.MONO}", "Courier New";
+            background: transparent;
+            min-width: 220px;
         """)
+        self._clock_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        lay.addWidget(self._clock_label)
+
+        lay.addSpacing(Spacing.LG)
+
+        logs_btn = self._small_btn("Logs")
         logs_btn.clicked.connect(self.logs_requested.emit)
-        layout.addWidget(logs_btn)
+        lay.addWidget(logs_btn)
+        return h
 
-        return header
-
-    def _build_body(self) -> QWidget:
+    def _build_body(self):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setStyleSheet("border: none;")
 
         body = QWidget()
-        layout = QVBoxLayout(body)
-        layout.setContentsMargins(Spacing.LG, Spacing.LG, Spacing.LG, Spacing.LG)
-        layout.setSpacing(Spacing.LG)
+        lay = QVBoxLayout(body)
+        lay.setContentsMargins(Spacing.LG, Spacing.LG, Spacing.LG, Spacing.LG)
+        lay.setSpacing(Spacing.MD)
 
-        layout.addWidget(self._build_aircraft_section())
-        layout.addWidget(self._build_divider())
-        layout.addWidget(self._build_position_fuel_row())
-        layout.addWidget(self._build_divider())
-        layout.addWidget(self._build_emergency_section())
-        layout.addStretch()
+        # ACFT TYPE
+        lay.addWidget(self._section_label("ACFT TYPE"))
+        lay.addWidget(self._build_aircraft_row())
+        lay.addWidget(self._hdivider())
 
+        # EMERGENCY TYPE + FUEL STATE
+        row1 = QHBoxLayout()
+        row1.setSpacing(Spacing.LG)
+
+        emrg_col = QVBoxLayout()
+        emrg_col.setSpacing(Spacing.SM)
+        emrg_col.addWidget(self._section_label("EMERGENCY TYPE"))
+        emrg_col.addWidget(self._build_emergency_grid())
+        row1.addLayout(emrg_col, stretch=2)
+
+        vdiv = QFrame()
+        vdiv.setFrameShape(QFrame.Shape.VLine)
+        vdiv.setFixedWidth(1)
+        vdiv.setStyleSheet(f"background-color: {Colour.BORDER};")
+        row1.addWidget(vdiv)
+
+        fuel_col = QVBoxLayout()
+        fuel_col.setSpacing(Spacing.SM)
+        fuel_col.addWidget(self._section_label("FUEL STATE"))
+        fuel_col.addWidget(self._build_fuel_col())
+        row1.addLayout(fuel_col, stretch=1)
+
+        lay.addLayout(row1)
+        lay.addWidget(self._hdivider())
+
+        # POSITION
+        lay.addWidget(self._section_label("POSITION"))
+        lay.addWidget(self._build_position_row(), stretch=1)
+
+        # Operational panel
+        self._op_panel = self._build_op_panel()
+        self._op_panel.setVisible(False)
+        lay.addWidget(self._op_panel)
+
+        lay.addStretch()
         scroll.setWidget(body)
         return scroll
 
-    def _build_aircraft_section(self) -> QWidget:
+    def _build_aircraft_row(self):
         container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(Spacing.SM)
+        lay = QHBoxLayout(container)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(Spacing.SM)
 
-        label = self._section_label("AIRCRAFT TYPE")
-        layout.addWidget(label)
-
-        # Horizontal scrollable row of aircraft buttons
         scroll = QScrollArea()
-        scroll.setFixedHeight(80)
+        scroll.setFixedHeight(66)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setStyleSheet("border: none; background: transparent;")
 
-        row_widget = QWidget()
-        row_layout = QHBoxLayout(row_widget)
-        row_layout.setContentsMargins(0, 0, 0, 0)
-        row_layout.setSpacing(Spacing.SM)
+        row = QWidget()
+        row_lay = QHBoxLayout(row)
+        row_lay.setContentsMargins(0, 0, 0, 0)
+        row_lay.setSpacing(Spacing.SM)
 
-        for aircraft in list_available_aircraft():
-            btn = QPushButton(aircraft)
-            btn.setFixedSize(100, 64)
-            btn.setStyleSheet(self._picker_btn_style(False))
-            btn.clicked.connect(lambda checked, a=aircraft: self._select_aircraft(a))
-            self._aircraft_buttons[aircraft] = btn
-            row_layout.addWidget(btn)
+        for ac in list_available_aircraft():
+            btn = QPushButton(ac)
+            btn.setFixedSize(104, 52)
+            btn.setStyleSheet(self._unselected_style())
+            btn.clicked.connect(lambda _, a=ac: self._sel_aircraft(a))
+            self._acft_btns[ac] = btn
+            row_lay.addWidget(btn)
+        row_lay.addStretch()
+        scroll.setWidget(row)
+        self._acft_scroll = scroll
 
-        row_layout.addStretch()
-        row_widget.setLayout(row_layout)
-        scroll.setWidget(row_widget)
-        layout.addWidget(scroll)
+        # Arrows
+        left_arrow = self._arrow_btn("◀")
+        left_arrow.clicked.connect(lambda: self._scroll_aircraft(-120))
+        right_arrow = self._arrow_btn("▶")
+        right_arrow.clicked.connect(lambda: self._scroll_aircraft(120))
 
+        lay.addWidget(left_arrow)
+        lay.addWidget(scroll, stretch=1)
+        lay.addWidget(right_arrow)
         return container
 
-    def _build_position_fuel_row(self) -> QWidget:
-        container = QWidget()
-        layout = QHBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(Spacing.XL)
+    def _scroll_aircraft(self, delta):
+        sb = self._acft_scroll.horizontalScrollBar()
+        sb.setValue(sb.value() + delta)
 
-        layout.addWidget(self._build_position_section(), stretch=1)
-        layout.addWidget(self._build_fuel_section())
+    def _build_emergency_grid(self):
+        w = QWidget()
+        grid = QGridLayout(w)
+        grid.setSpacing(Spacing.SM)
+        grid.setContentsMargins(0, 0, 0, 0)
+        for i, (etype, label) in enumerate(EMERGENCY_CFG.items()):
+            btn = QPushButton(label)
+            btn.setFixedHeight(56)
+            btn.setStyleSheet(self._unselected_style())
+            btn.clicked.connect(lambda _, e=etype: self._sel_emergency(e))
+            self._emrg_btns[etype] = btn
+            grid.addWidget(btn, i // 4, i % 4)
+        return w
 
-        return container
+    def _build_fuel_col(self):
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(Spacing.SM)
+        for state, (label, colour, dim) in FUEL_CFG.items():
+            btn = QPushButton(label)
+            btn.setFixedHeight(52)
+            # Unselected fuel buttons show their colour as text only
+            btn.setStyleSheet(self._fuel_unselected(colour, dim))
+            btn.clicked.connect(lambda _, s=state: self._sel_fuel(s))
+            self._fuel_btns[state] = btn
+            lay.addWidget(btn)
+        return w
 
-    def _build_position_section(self) -> QWidget:
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(Spacing.SM)
+    def _build_position_row(self):
+        w = QWidget()
+        lay = QHBoxLayout(w)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(Spacing.LG)
 
-        layout.addWidget(self._section_label("POSITION"))
+        # Map — expanding
+        self._map = MapWidget(self._lat, self._lon)
+        self._map.setMinimumHeight(180)
+        self._map.position_selected.connect(self._on_map_pos)
+        lay.addWidget(self._map, stretch=1)
 
-        validator = QDoubleValidator(-180.0, 180.0, 6)
+        # Coordinate inputs
+        coord = QVBoxLayout()
+        coord.setSpacing(Spacing.SM)
 
-        lat_row = QHBoxLayout()
-        lat_lbl = QLabel("LAT")
-        lat_lbl.setFixedWidth(36)
-        lat_lbl.setStyleSheet(f"color: {Colour.TEXT_SECONDARY}; font-size: {Font.SIZE_SMALL}px;")
-        self._lat_input = QLineEdit("26.2708")
-        self._lat_input.setFixedHeight(48)
-        self._lat_input.setValidator(validator)
-        lat_row.addWidget(lat_lbl)
-        lat_row.addWidget(self._lat_input)
-        layout.addLayout(lat_row)
+        for attr, label, min_v, max_v in [
+            ("_lat_field", "LATITUDE", -90.0, 90.0),
+            ("_lon_field", "LONGITUDE", -180.0, 180.0),
+        ]:
+            lbl = QLabel(label)
+            lbl.setStyleSheet(f"""
+                color: {Colour.TEXT_SECONDARY};
+                font-size: {Font.SZ_SM}px;
+                font-weight: bold;
+                letter-spacing: 1px;
+                background: transparent;
+            """)
+            coord.addWidget(lbl)
 
-        lon_row = QHBoxLayout()
-        lon_lbl = QLabel("LON")
-        lon_lbl.setFixedWidth(36)
-        lon_lbl.setStyleSheet(f"color: {Colour.TEXT_SECONDARY}; font-size: {Font.SIZE_SMALL}px;")
-        self._lon_input = QLineEdit("50.6336")
-        self._lon_input.setFixedHeight(48)
-        self._lon_input.setValidator(validator)
-        lon_row.addWidget(lon_lbl)
-        lon_row.addWidget(self._lon_input)
-        layout.addLayout(lon_row)
+            val = str(self._lat if attr == "_lat_field" else self._lon)
+            field = QLineEdit(val)
+            field.setReadOnly(True)
+            field.setFixedHeight(52)
+            field.setCursor(Qt.CursorShape.PointingHandCursor)
+            field.setStyleSheet(f"""
+                QLineEdit {{
+                    background-color: {Colour.BG_INPUT};
+                    color: {Colour.CYAN};
+                    border: 1px solid {Colour.BORDER};
+                    border-radius: {Spacing.RADIUS_SM}px;
+                    padding: 8px 12px;
+                    font-size: {Font.SZ_MD}px;
+                    font-family: "{Font.MONO}", "Courier New";
+                }}
+                QLineEdit:hover {{ border-color: {Colour.CYAN_DIM}; }}
+            """)
+            setattr(self, attr, field)
+            fld = field
+            mn, mx, la = min_v, max_v, label
+            field.mousePressEvent = lambda e, f=fld, la=la, mn=mn, mx=mx: self._open_numpad(la, f, mn, mx)
+            coord.addWidget(field)
+            coord.addSpacing(Spacing.XS)
 
-        return container
+        coord.addStretch()
+        lay.addLayout(coord)
+        return w
 
-    def _build_fuel_section(self) -> QWidget:
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(Spacing.SM)
+    def _build_op_panel(self):
+        panel = QWidget()
+        panel.setStyleSheet(f"""
+            QWidget {{
+                background-color: {Colour.BG_CARD};
+                border-top: 2px solid {Colour.CYAN_DIM};
+            }}
+        """)
+        lay = QVBoxLayout(panel)
+        lay.setContentsMargins(Spacing.MD, Spacing.MD, Spacing.MD, Spacing.MD)
+        lay.setSpacing(Spacing.SM)
 
-        layout.addWidget(self._section_label("FUEL STATE"))
+        title = QLabel("EXCLUDED AIRPORTS")
+        title.setStyleSheet(f"""
+            color: {Colour.CYAN};
+            font-size: {Font.SZ_BODY}px;
+            font-weight: bold;
+            background: transparent;
+        """)
+        lay.addWidget(title)
+
+        hint = QLabel("Add airport ICAO codes to exclude from results. Only airports in the database are accepted.")
+        hint.setStyleSheet(f"""
+            color: {Colour.TEXT_SECONDARY};
+            font-size: {Font.SZ_SM}px;
+            background: transparent;
+        """)
+        hint.setWordWrap(True)
+        lay.addWidget(hint)
+
+        self._icao_list = QListWidget()
+        self._icao_list.setFixedHeight(76)
+        self._icao_list.setStyleSheet(f"""
+            QListWidget {{
+                background-color: {Colour.BG_INPUT};
+                border: 1px solid {Colour.BORDER};
+                border-radius: {Spacing.RADIUS_SM}px;
+                color: {Colour.CYAN};
+                font-size: {Font.SZ_BODY}px;
+                font-family: "{Font.MONO}", "Courier New";
+            }}
+            QListWidget::item {{ padding: 6px 12px; border: none; }}
+        """)
+        lay.addWidget(self._icao_list)
 
         btn_row = QHBoxLayout()
         btn_row.setSpacing(Spacing.SM)
 
-        for state in [FuelState.NORMAL, FuelState.LOW, FuelState.CRITICAL]:
-            btn = QPushButton(state.value.upper())
-            btn.setFixedSize(100, 64)
-            btn.setStyleSheet(self._fuel_btn_style(state, False))
-            btn.clicked.connect(lambda checked, s=state: self._select_fuel(s))
-            self._fuel_buttons[state] = btn
-            btn_row.addWidget(btn)
+        add_btn = QPushButton("Add Airport")
+        add_btn.setFixedHeight(48)
+        add_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {Colour.CYAN_BG};
+                color: {Colour.CYAN};
+                border: 1px solid {Colour.CYAN_DIM};
+                border-radius: {Spacing.RADIUS_SM}px;
+                font-size: {Font.SZ_BODY}px;
+                font-weight: bold;
+            }}
+            QPushButton:pressed {{ background-color: {Colour.CYAN_DIM}; }}
+        """)
+        add_btn.clicked.connect(self._open_icao_keyboard)
 
-        layout.addLayout(btn_row)
-        return container
+        clr_btn = QPushButton("Clear All")
+        clr_btn.setFixedHeight(48)
+        clr_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {Colour.AMBER};
+                border: 1px solid {Colour.AMBER_DIM};
+                border-radius: {Spacing.RADIUS_SM}px;
+                font-size: {Font.SZ_BODY}px;
+            }}
+            QPushButton:pressed {{ background-color: {Colour.AMBER_BG}; }}
+        """)
+        clr_btn.clicked.connect(self._clear_icaos)
 
-    def _build_emergency_section(self) -> QWidget:
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(Spacing.SM)
+        btn_row.addWidget(add_btn, stretch=2)
+        btn_row.addWidget(clr_btn, stretch=1)
+        lay.addLayout(btn_row)
 
-        layout.addWidget(self._section_label("EMERGENCY TYPE"))
+        self._op_warning = QLabel("")
+        self._op_warning.setStyleSheet(f"""
+            color: {Colour.AMBER};
+            font-size: {Font.SZ_SM}px;
+            background: transparent;
+        """)
+        lay.addWidget(self._op_warning)
+        return panel
 
-        grid = QGridLayout()
-        grid.setSpacing(Spacing.SM)
-
-        emergencies = list(EMERGENCY_LABELS.items())
-        for i, (etype, label) in enumerate(emergencies):
-            btn = QPushButton(label)
-            btn.setFixedHeight(64)
-            btn.setMinimumWidth(130)
-            btn.setStyleSheet(self._emergency_btn_style(False))
-            btn.clicked.connect(lambda checked, e=etype: self._select_emergency(e))
-            self._emergency_buttons[etype] = btn
-            grid.addWidget(btn, i // 4, i % 4)
-
-        layout.addLayout(grid)
-        return container
-
-    def _build_run_bar(self) -> QWidget:
+    def _build_footer(self):
         bar = QWidget()
         bar.setFixedHeight(88)
         bar.setStyleSheet(f"""
             background-color: {Colour.BG_HEADER};
-            border-top: 1px solid {Colour.BORDER_DEFAULT};
+            border-top: 1px solid {Colour.BORDER};
         """)
+        lay = QHBoxLayout(bar)
+        lay.setContentsMargins(Spacing.LG, Spacing.MD, Spacing.LG, Spacing.MD)
+        lay.setSpacing(Spacing.MD)
 
-        layout = QHBoxLayout(bar)
-        layout.setContentsMargins(Spacing.LG, Spacing.MD, Spacing.LG, Spacing.MD)
+        reset_btn = QPushButton("Reset")
+        reset_btn.setFixedSize(90, Spacing.BTN_H)
+        reset_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {Colour.AMBER};
+                border: 1px solid {Colour.AMBER_DIM};
+                border-radius: {Spacing.RADIUS_SM}px;
+                font-size: {Font.SZ_BODY}px;
+                font-weight: bold;
+            }}
+            QPushButton:pressed {{ background-color: {Colour.AMBER_BG}; }}
+        """)
+        reset_btn.clicked.connect(self._reset)
+        lay.addWidget(reset_btn)
 
-        self._run_btn = QPushButton("▶   RUN DIVERSION ANALYSIS")
-        self._run_btn.setFixedHeight(Spacing.BUTTON_HEIGHT)
+        self._run_btn = QPushButton("Run Diversion Analysis")
+        self._run_btn.setFixedHeight(Spacing.BTN_H)
         self._run_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {Colour.ACCENT_BLUE};
-                color: {Colour.TEXT_PRIMARY};
-                border: none;
-                border-radius: {Spacing.BUTTON_RADIUS}px;
-                font-size: {Font.SIZE_LARGE}px;
+                background-color: {Colour.GREEN_BG};
+                color: {Colour.GREEN};
+                border: 1px solid {Colour.GREEN_DIM};
+                border-radius: {Spacing.RADIUS_SM}px;
+                font-size: {Font.SZ_LG}px;
                 font-weight: bold;
-                letter-spacing: 1px;
             }}
             QPushButton:pressed {{
-                background-color: {Colour.ACCENT_BLUE_DIM};
+                background-color: {Colour.GREEN_DIM};
+                color: {Colour.TEXT_PRIMARY};
             }}
             QPushButton:disabled {{
-                background-color: {Colour.ACCENT_BLUE_DIM};
                 color: {Colour.TEXT_MUTED};
+                border-color: {Colour.TEXT_MUTED};
+                background-color: transparent;
             }}
         """)
         self._run_btn.clicked.connect(self._on_run)
-        layout.addWidget(self._run_btn)
-
+        lay.addWidget(self._run_btn, stretch=1)
         return bar
 
-    # ── Selection handlers ─────────────────────────────────────────────────────
+    # ── Overlays ──────────────────────────────────────────────────────────────
 
-    def _select_aircraft(self, aircraft: str) -> None:
-        self._selected_aircraft = aircraft
-        for name, btn in self._aircraft_buttons.items():
-            btn.setStyleSheet(self._picker_btn_style(name == aircraft))
+    def _open_numpad(self, label, field, min_v, max_v):
+        np = NumpadWidget(label, field.text(), min_v, max_v, self)
+        np.setGeometry(0, 0, self.width(), self.height())
+        np.setStyleSheet(f"NumpadWidget {{ background-color: rgba(14, 26, 36, 230); }}")
 
-    def _select_fuel(self, state: FuelState) -> None:
-        self._selected_fuel = state
-        for s, btn in self._fuel_buttons.items():
-            btn.setStyleSheet(self._fuel_btn_style(s, s == state))
+        def accept(val):
+            field.setText(val)
+            if "LAT" in label:
+                self._lat = float(val)
+            else:
+                self._lon = float(val)
+            self._map.set_position(self._lat, self._lon)
+            np.deleteLater()
 
-    def _select_emergency(self, etype: EmergencyType) -> None:
-        self._selected_emergency = etype
-        for e, btn in self._emergency_buttons.items():
-            btn.setStyleSheet(self._emergency_btn_style(e == etype))
+        np.value_accepted.connect(accept)
+        np.cancelled.connect(np.deleteLater)
+        np.show()
+        np.raise_()
 
-    def _on_run(self) -> None:
-        if not self._selected_aircraft:
-            self._flash_error("Please select an aircraft type.")
+    def _open_icao_keyboard(self):
+        kb = ICAOKeyboard(self)
+        kb.setGeometry(0, 0, self.width(), self.height())
+        kb.setStyleSheet(f"ICAOKeyboard {{ background-color: rgba(14, 26, 36, 230); }}")
+
+        def on_code(code):
+            if code not in self._excluded_icaos:
+                self._excluded_icaos.append(code)
+                self._icao_list.addItem(code)
+            self._op_warning.setText("")
+            kb.reset()
+
+        kb.code_accepted.connect(on_code)
+        kb.cancelled.connect(kb.deleteLater)
+        kb.show()
+        kb.raise_()
+
+    def _clear_icaos(self):
+        self._excluded_icaos.clear()
+        self._icao_list.clear()
+
+    # ── Selection ─────────────────────────────────────────────────────────────
+
+    def _sel_aircraft(self, ac):
+        self._aircraft = ac
+        for name, btn in self._acft_btns.items():
+            btn.setStyleSheet(
+                self._selected_style() if name == ac else self._unselected_style()
+            )
+
+    def _sel_fuel(self, state):
+        if not self._fuel_btns[state].isEnabled():
             return
-        if not self._selected_fuel:
-            self._flash_error("Please select a fuel state.")
-            return
-        if not self._selected_emergency:
-            self._flash_error("Please select an emergency type.")
-            return
+        self._fuel = state
+        for s, btn in self._fuel_btns.items():
+            _, c, d = FUEL_CFG[s]
+            btn.setStyleSheet(
+                self._selected_style() if s == state else self._fuel_unselected(c, d)
+            )
 
-        try:
-            lat = float(self._lat_input.text())
-            lon = float(self._lon_input.text())
-        except ValueError:
-            self._flash_error("Invalid position values.")
-            return
+    def _sel_emergency(self, etype):
+        self._emergency = etype
+        for e, btn in self._emrg_btns.items():
+            btn.setStyleSheet(
+                self._selected_style() if e == etype else self._unselected_style()
+            )
 
-        self.run_requested.emit(
-            self._selected_aircraft,
-            lat,
-            lon,
-            self._selected_fuel,
-            self._selected_emergency,
+        # Disable NORMAL fuel for FUEL emergency
+        is_fuel = etype == EmergencyType.FUEL
+        nb = self._fuel_btns[FuelState.NORMAL]
+        nb.setEnabled(not is_fuel)
+        if is_fuel and self._fuel == FuelState.NORMAL:
+            self._fuel = None
+            for s, btn in self._fuel_btns.items():
+                _, c, d = FUEL_CFG[s]
+                btn.setStyleSheet(self._fuel_unselected(c, d))
+
+        self._op_panel.setVisible(
+            etype == EmergencyType.OPERATIONAL_CONSTRAINTS
         )
 
-    def _flash_error(self, message: str) -> None:
-        original = self._run_btn.text()
-        self._run_btn.setText(f"  ⚠  {message}")
+    def _on_map_pos(self, lat, lon):
+        self._lat, self._lon = lat, lon
+        self._lat_field.setText(str(lat))
+        self._lon_field.setText(str(lon))
+
+    def _reset(self):
+        self._aircraft = None
+        self._fuel = None
+        self._emergency = None
+        self._lat, self._lon = 26.2708, 50.6336
+        for btn in self._acft_btns.values():
+            btn.setStyleSheet(self._unselected_style())
+        for state, btn in self._fuel_btns.items():
+            _, c, d = FUEL_CFG[state]
+            btn.setEnabled(True)
+            btn.setStyleSheet(self._fuel_unselected(c, d))
+        for btn in self._emrg_btns.values():
+            btn.setStyleSheet(self._unselected_style())
+        self._lat_field.setText(str(self._lat))
+        self._lon_field.setText(str(self._lon))
+        self._map.set_position(self._lat, self._lon)
+        self._op_panel.setVisible(False)
+        self._clear_icaos()
+
+    def _on_run(self):
+        if not self._aircraft:
+            return self._flash("Select an aircraft type")
+        if not self._fuel:
+            return self._flash("Select a fuel state")
+        if not self._emergency:
+            return self._flash("Select an emergency type")
+        if (self._emergency == EmergencyType.OPERATIONAL_CONSTRAINTS
+                and not self._excluded_icaos):
+            self._op_warning.setText("Add at least one airport ICAO code to exclude")
+            return
+        self.run_requested.emit(
+            self._aircraft, self._lat, self._lon,
+            self._fuel, self._emergency,
+            self._excluded_icaos, [], [],
+        )
+
+    def _flash(self, msg):
+        orig = self._run_btn.text()
+        self._run_btn.setText(f"  {msg}")
         self._run_btn.setEnabled(False)
-        from PySide6.QtCore import QTimer
-        QTimer.singleShot(2000, lambda: (
-            self._run_btn.setText(original),
+        QTimer.singleShot(2500, lambda: (
+            self._run_btn.setText(orig),
             self._run_btn.setEnabled(True),
         ))
 
-    # ── Style helpers ──────────────────────────────────────────────────────────
+    # ── Style helpers — UNIFIED selection colour ──────────────────────────────
 
-    def _section_label(self, text: str) -> QLabel:
-        lbl = QLabel(text)
-        lbl.setStyleSheet(f"""
-            color: {Colour.TEXT_SECONDARY};
-            font-size: {Font.SIZE_SMALL}px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        """)
-        return lbl
-
-    def _build_divider(self) -> QFrame:
-        line = QFrame()
-        line.setFrameShape(QFrame.Shape.HLine)
-        line.setFixedHeight(1)
-        line.setStyleSheet(f"background-color: {Colour.DIVIDER};")
-        return line
-
-    def _picker_btn_style(self, selected: bool) -> str:
-        if selected:
-            return f"""
-                QPushButton {{
-                    background-color: {Colour.ACCENT_BLUE};
-                    color: {Colour.TEXT_PRIMARY};
-                    border: 1px solid {Colour.ACCENT_BLUE};
-                    border-radius: {Spacing.BUTTON_RADIUS}px;
-                    font-size: {Font.SIZE_SMALL}px;
-                    font-weight: bold;
-                }}
-            """
+    def _selected_style(self) -> str:
+        """All selected buttons look the same — cyan border + cyan tint."""
         return f"""
             QPushButton {{
-                background-color: {Colour.BG_SECONDARY};
-                color: {Colour.TEXT_SECONDARY};
-                border: 1px solid {Colour.BORDER_DEFAULT};
-                border-radius: {Spacing.BUTTON_RADIUS}px;
-                font-size: {Font.SIZE_SMALL}px;
-            }}
-            QPushButton:pressed {{
-                background-color: {Colour.BG_INPUT};
-                color: {Colour.TEXT_PRIMARY};
+                background-color: {Colour.SEL_BG};
+                color: {Colour.SEL_TEXT};
+                border: 1px solid {Colour.SEL_BORDER};
+                border-radius: {Spacing.RADIUS_SM}px;
+                font-size: {Font.SZ_SM}px;
+                font-weight: bold;
             }}
         """
 
-    def _fuel_btn_style(self, state: FuelState, selected: bool) -> str:
-        colour = FUEL_COLOURS[state]
-        if selected:
-            return f"""
-                QPushButton {{
-                    background-color: {colour};
-                    color: {Colour.BG_PRIMARY};
-                    border: 2px solid {colour};
-                    border-radius: {Spacing.BUTTON_RADIUS}px;
-                    font-size: {Font.SIZE_SMALL}px;
-                    font-weight: bold;
-                }}
-            """
+    def _unselected_style(self) -> str:
         return f"""
             QPushButton {{
-                background-color: {Colour.BG_SECONDARY};
+                background-color: {Colour.BTN_BG};
+                color: {Colour.TEXT_SECONDARY};
+                border: 1px solid {Colour.BORDER};
+                border-radius: {Spacing.RADIUS_SM}px;
+                font-size: {Font.SZ_SM}px;
+            }}
+            QPushButton:pressed {{
+                background-color: {Colour.BTN_PRESSED};
+                color: {Colour.TEXT_PRIMARY};
+            }}
+            QPushButton:disabled {{
+                color: {Colour.TEXT_MUTED};
+                border-color: {Colour.TEXT_MUTED};
+                background-color: {Colour.BG_BASE};
+            }}
+        """
+
+    def _fuel_unselected(self, colour: str, dim: str) -> str:
+        """Fuel buttons show their status colour as text when unselected."""
+        return f"""
+            QPushButton {{
+                background-color: {Colour.BTN_BG};
                 color: {colour};
-                border: 1px solid {colour};
-                border-radius: {Spacing.BUTTON_RADIUS}px;
-                font-size: {Font.SIZE_SMALL}px;
+                border: 1px solid {dim};
+                border-radius: {Spacing.RADIUS_SM}px;
+                font-size: {Font.SZ_SM}px;
                 font-weight: bold;
             }}
             QPushButton:pressed {{
-                background-color: {Colour.BG_INPUT};
+                background-color: {Colour.BTN_PRESSED};
+                color: {Colour.TEXT_PRIMARY};
+            }}
+            QPushButton:disabled {{
+                color: {Colour.TEXT_MUTED};
+                border-color: {Colour.TEXT_MUTED};
+                background-color: {Colour.BG_BASE};
             }}
         """
 
-    def _emergency_btn_style(self, selected: bool) -> str:
-        if selected:
-            return f"""
-                QPushButton {{
-                    background-color: {Colour.EMERGENCY};
-                    color: {Colour.TEXT_PRIMARY};
-                    border: 2px solid {Colour.EMERGENCY};
-                    border-radius: {Spacing.BUTTON_RADIUS}px;
-                    font-size: {Font.SIZE_SMALL}px;
-                    font-weight: bold;
-                }}
-            """
-        return f"""
+    def _section_label(self, text) -> QLabel:
+        lbl = QLabel(text)
+        lbl.setStyleSheet(f"""
+            color: {Colour.TEXT_SECONDARY};
+            font-size: {Font.SZ_SM}px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            background: transparent;
+        """)
+        return lbl
+
+    def _hdivider(self) -> QFrame:
+        f = QFrame()
+        f.setFrameShape(QFrame.Shape.HLine)
+        f.setFixedHeight(1)
+        f.setStyleSheet(f"background-color: {Colour.BORDER};")
+        return f
+
+    def _small_btn(self, text) -> QPushButton:
+        btn = QPushButton(text)
+        btn.setFixedHeight(34)
+        btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {Colour.BG_SECONDARY};
+                background-color: transparent;
                 color: {Colour.TEXT_SECONDARY};
-                border: 1px solid {Colour.BORDER_DEFAULT};
-                border-radius: {Spacing.BUTTON_RADIUS}px;
-                font-size: {Font.SIZE_SMALL}px;
+                border: 1px solid {Colour.BORDER};
+                border-radius: {Spacing.RADIUS_SM}px;
+                font-size: {Font.SZ_SM}px;
+                padding: 0 14px;
             }}
             QPushButton:pressed {{
-                background-color: {Colour.BG_INPUT};
+                background-color: {Colour.BTN_PRESSED};
                 color: {Colour.TEXT_PRIMARY};
             }}
-        """
+        """)
+        return btn
+
+    def _arrow_btn(self, text) -> QPushButton:
+        btn = QPushButton(text)
+        btn.setFixedSize(38, 52)
+        btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {Colour.BTN_BG};
+                color: {Colour.CYAN};
+                border: 1px solid {Colour.BORDER};
+                border-radius: {Spacing.RADIUS_SM}px;
+                font-size: {Font.SZ_LG}px;
+            }}
+            QPushButton:pressed {{ background-color: {Colour.CYAN_BG}; }}
+        """)
+        return btn
