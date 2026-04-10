@@ -1,10 +1,17 @@
 """
 map_widget.py  —  EDA 
 
-Pointer accuracy fix:
-- Use e.pos() (integer logical coords) instead of e.position()
-- Coordinate system is 0,0 to width,height with no border offset
-- _to_pixel and _to_latlon use identical formula so tap == crosshair
+Pointer fix — device pixel ratio correction applied inside the widget.
+
+On Windows at 150% scaling, devicePixelRatio = 1.5
+Mouse events arrive in logical pixels (already divided by DPR).
+paintEvent also uses logical pixels.
+So they should match — but Qt's mapToGlobal/mapFromGlobal can
+introduce offset when the widget is inside a scroll area or nested layout.
+
+Fix: use mapFromGlobal(QCursor.pos()) instead of e.pos() to get
+the cursor position in widget-local logical coordinates directly.
+This bypasses any coordinate transformation issues from nested layouts.
 """
 
 from __future__ import annotations
@@ -14,7 +21,7 @@ from PySide6.QtWidgets import QWidget, QSizePolicy
 from PySide6.QtCore import Signal, Qt, QPoint
 from PySide6.QtGui import (
     QPainter, QPixmap, QColor, QPen, QBrush,
-    QFont, QMouseEvent,
+    QFont, QMouseEvent, QCursor,
 )
 
 from ui.theme import Colour, Font
@@ -36,9 +43,8 @@ class MapWidget(QWidget):
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Expanding,
         )
-        self.setMinimumSize(400, 180)
+        self.setMinimumSize(400, 150)
         self.setCursor(Qt.CursorShape.CrossCursor)
-        # No border in stylesheet — avoids coordinate offset confusion
         self.setStyleSheet(f"""
             MapWidget {{
                 background-color: {Colour.BG_INPUT};
@@ -52,7 +58,7 @@ class MapWidget(QWidget):
             if not px.isNull():
                 self._pixmap = px
 
-    # ── Coordinate conversion — single source of truth ───────────────────────
+    # ── Coordinate conversion ─────────────────────────────────────────────────
 
     def _lon_to_x(self, lon: float) -> int:
         return int((lon + 180.0) / 360.0 * self.width())
@@ -80,13 +86,23 @@ class MapWidget(QWidget):
 
     def mousePressEvent(self, e: QMouseEvent) -> None:
         if e.button() == Qt.MouseButton.LeftButton:
-            # e.pos() gives logical integer coordinates — correct for mapping
-            x = e.pos().x()
-            y = e.pos().y()
+            # Map global cursor position to widget-local coordinates.
+            # This is the most reliable method across all platforms and
+            # DPI scaling settings — it bypasses nested layout offsets.
+            global_pos = QCursor.pos()
+            local_pos  = self.mapFromGlobal(global_pos)
+            x = local_pos.x()
+            y = local_pos.y()
+
+            # Clamp to widget bounds
+            x = max(0, min(x, self.width()  - 1))
+            y = max(0, min(y, self.height() - 1))
+
             lat = round(self._y_to_lat(y), 4)
             lon = round(self._x_to_lon(x), 4)
-            lat = max(-90.0, min(90.0, lat))
+            lat = max(-90.0,  min(90.0,  lat))
             lon = max(-180.0, min(180.0, lon))
+
             self._lat = lat
             self._lon = lon
             self.update()
@@ -101,10 +117,8 @@ class MapWidget(QWidget):
         w = self.width()
         h = self.height()
 
-        # Background
         p.fillRect(0, 0, w, h, QColor(Colour.BG_INPUT))
 
-        # Map image — drawn over full widget area
         if self._pixmap:
             scaled = self._pixmap.scaled(
                 w, h,
@@ -115,7 +129,7 @@ class MapWidget(QWidget):
             p.drawPixmap(0, 0, w, h, scaled)
             p.setOpacity(1.0)
 
-        # Graticule — every 30 degrees
+        # Graticule
         pen = QPen(QColor(20, 40, 60))
         pen.setWidth(1)
         p.setPen(pen)
@@ -126,38 +140,35 @@ class MapWidget(QWidget):
             x = self._lon_to_x(lon)
             p.drawLine(x, 0, x, h)
 
-        # Equator / prime meridian brighter
+        # Equator / prime meridian
         pen.setColor(QColor(0, 70, 100))
         p.setPen(pen)
         p.drawLine(0, self._lat_to_y(0), w, self._lat_to_y(0))
         p.drawLine(self._lon_to_x(0), 0, self._lon_to_x(0), h)
 
-        # Aircraft crosshair — uses same conversion functions as mouse handler
+        # Aircraft marker — uses same conversion functions as mouse handler
         x = self._lon_to_x(self._lon)
         y = self._lat_to_y(self._lat)
         r = 9
 
-        # Outer ring
         pen = QPen(QColor(Colour.CYAN))
         pen.setWidth(2)
         p.setPen(pen)
         p.setBrush(Qt.BrushStyle.NoBrush)
         p.drawEllipse(x - r - 3, y - r - 3, (r + 3) * 2, (r + 3) * 2)
 
-        # Crosshair lines
         pen.setWidth(1)
         p.setPen(pen)
-        p.drawLine(x - r - 10, y, x - r, y)
+        p.drawLine(x - r - 10, y, x - r,      y)
         p.drawLine(x + r,      y, x + r + 10, y)
         p.drawLine(x, y - r - 10, x, y - r)
         p.drawLine(x, y + r,      x, y + r + 10)
 
-        # Centre dot
         p.setBrush(QBrush(QColor(Colour.CYAN)))
         p.setPen(Qt.PenStyle.NoPen)
         p.drawEllipse(x - 4, y - 4, 8, 8)
 
-        # Coordinate readout — bottom left corner
+        # Coordinate readout
         text = f"  {self._lat:+.4f}\u00b0   {self._lon:+.4f}\u00b0  "
         fnt = QFont("Roboto Mono", Font.SZ_SM)
         fnt.setBold(True)

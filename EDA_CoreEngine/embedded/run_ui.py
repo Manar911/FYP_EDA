@@ -1,49 +1,36 @@
 """
-run_ui.py
+run_ui.py  —  EDA 
 
-Single entry point for the EDA embedded UI.
+Target: Raspberry Pi 5 — 7-inch IPS 1024x600 capacitive touch display.
 
-Project structure assumed:
-    EDA_CoreEngine/
-        src/eda/          ← core engine modules
-        models/           ← trained model
-        embedded/
-            run_ui.py     ← this file
-            ui/           ← UI modules
-            logs/         ← runtime logs
+Scaling is forced to 1:1 always.
+On laptop this means the window appears at true 1024x600 pixels.
+On Pi 1024x600 native display it fills the screen perfectly.
 
 Usage:
-    Development (from embedded/ folder):
-        python run_ui.py
-
-    Pi kiosk deployment (fullscreen):
-        python run_ui.py --fullscreen
-
-    Or via start.sh which sets everything up automatically.
+    python run_ui.py              # windowed (testing)
+    python run_ui.py --fullscreen # fullscreen kiosk (Pi deployment)
 """
 
 from __future__ import annotations
-
 import sys
+import os
 from pathlib import Path
 
-# ── Path setup ────────────────────────────────────────────────────────────────
-# embedded/ is one level inside EDA_CoreEngine/
-# src/ is at EDA_CoreEngine/src/
-# models/ is at EDA_CoreEngine/models/
+# ── Force 1:1 pixel mapping ───────────────────────────────────────────────────
+# Must be set before QApplication is created.
+# Ensures mouse events and paint coordinates use identical pixel space.
+# Critical for map pointer accuracy on the Pi 1024x600 display.
+os.environ["QT_SCALE_FACTOR"]            = "1"
+os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "0"
+os.environ["QT_SCREEN_SCALE_FACTORS"]    = "1"
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SRC_PATH     = PROJECT_ROOT / "src"
-MODELS_PATH  = PROJECT_ROOT / "models"
-
-# Add src/ so that `from eda.xxx import yyy` works
 sys.path.insert(0, str(SRC_PATH))
-
-# Add embedded/ so that `from ui.xxx import yyy` works
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
 from ui.app import EDAMainWindow
@@ -53,17 +40,10 @@ def main() -> None:
     app = QApplication(sys.argv)
     app.setApplicationName("EDA Core Engine")
     app.setOrganizationName("EDA")
-
-    # Default font
-    font = QFont("Arial", 14)
-    app.setFont(font)
-
-    # Disable high-DPI scaling — Pi display is native 1024x600
-    app.setAttribute(Qt.ApplicationAttribute.AA_Use96Dpi)
+    app.setFont(QFont("Roboto", 14))
 
     window = EDAMainWindow()
 
-    # Fullscreen kiosk mode for Pi deployment
     if "--fullscreen" in sys.argv:
         window.showFullScreen()
     else:
