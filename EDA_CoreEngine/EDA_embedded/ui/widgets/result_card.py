@@ -15,8 +15,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, Qt
 
-from eda.ranking import RankedOption
-from eda.explanation import Explanation
+from core.ranking import RankedOption
+from core.explanation import Explanation
 from ui.theme import Colour, Font, Spacing
 
 KM_TO_NM = 1.852   # 1 NM = 1.852 km

@@ -25,7 +25,7 @@ ROWS = [
 # Load valid ICAO codes from the airport database once at import time
 def _load_valid_icaos() -> set:
     try:
-        from eda.airport_db import load_airports
+        from core.airport_db import load_airports
         airports = load_airports()
         return {a.icao.upper() for a in airports}
     except Exception:

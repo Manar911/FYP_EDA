@@ -1,0 +1,97 @@
+﻿icao,iata,name,city,country,lat,lon,elevation_ft,runway_length_m,runway_width_m,surface_type,approach_type,has_ils,has_medical,medical_level,has_rescue,rescue_category,has_firefighting,has_maintenance,fuel_available,open_24h,is_international,tower_available,weather_reporting,closure_status,restricted_status,unsafe_status,civil_military,slot_restricted
+OBBI,BAH,Bahrain International Airport,Manama,Bahrain,26.267295,50.63764,6,3956,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OTHH,DOH,Hamad International Airport,Doha,Qatar,25.273056,51.608056,13,4850,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OMDB,DXB,Dubai International Airport,Dubai,United Arab Emirates,25.24979,55.370992,62,4447,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+OERK,RUH,King Khalid International Airport,Riyadh,Saudi Arabia,24.9576,46.698799,2049,4205,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OKKK,KWI,Kuwait International Airport,Kuwait City,Kuwait,29.224487,47.969813,206,4580,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OMAA,AUH,Zayed International Airport,Abu Dhabi,United Arab Emirates,24.440966,54.649237,88,4106,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+EGLL,LHR,London Heathrow Airport,London,United Kingdom,51.470748,-0.459909,83,3901,50,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+EGKK,LGW,London Gatwick Airport,London,United Kingdom,51.148744,-0.185739,202,3317,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+LFPG,CDG,Charles de Gaulle International Airport,"Paris (Roissy-en-France, Val-d'Oise)",France,49.00896,2.554117,392,4215,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+LEMD,MAD,Adolfo Suárez Madrid–Barajas Airport,Madrid,Spain,40.493407,-3.572249,1998,4350,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+EDDF,FRA,Frankfurt Main Airport,Frankfurt am Main,Germany,50.026706,8.55835,364,4000,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,0,1,1,1,open,none,safe,civil,1
+EHAM,AMS,Amsterdam Airport Schiphol,Amsterdam,Netherlands,52.308601,4.76389,-11,3800,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+LIRF,FCO,Rome–Fiumicino Leonardo da Vinci International Airport,Rome,Italy,41.804532,12.251998,13,3902,60,asphalt,ILS,1,1,basic,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+KJFK,JFK,John F. Kennedy International Airport,New York,United States,40.639447,-73.779317,13,4423,61,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+KLAX,LAX,Los Angeles International Airport,Los Angeles,United States,33.942501,-118.407997,125,3939,46,concrete,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+KORD,ORD,Chicago O'Hare International Airport,Chicago,United States,41.9786,-87.9048,680,3962,46,concrete,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+KATL,ATL,Hartsfield Jackson Atlanta International Airport,Atlanta,United States,33.6367,-84.428101,1026,3776,46,concrete,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+CYYZ,YYZ,Toronto Pearson International Airport,Toronto,Canada,43.675935,-79.629421,569,3389,61,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+CYVR,YVR,Vancouver International Airport,Vancouver,Canada,49.193901,-123.183998,14,3505,61,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+MMMX,MEX,Mexico City Benito Juárez International Airport,Mexico City,Mexico,19.435822,-99.07033,7316,3952,45,asphalt,ILS,1,1,basic,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+SBGR,GRU,São Paulo/Guarulhos–Governor André Franco Montoro International Airport,São Paulo,Brazil,-23.431274,-46.469954,2461,3700,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+SAEZ,EZE,Ezeiza International Airport - Ministro Pistarini,Buenos Aires (Ezeiza),Argentina,-34.8222,-58.5358,67,3300,60,asphalt,ILS,1,1,basic,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+FAOR,JNB,O.R. Tambo International Airport,Johannesburg,South Africa,-26.140081,28.246801,5558,4418,61,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+HECA,CAI,Cairo International Airport,Cairo,Egypt,30.111534,31.396694,322,4000,60,asphalt,ILS,1,1,basic,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+HKJK,NBO,Jomo Kenyatta International Airport,Nairobi,Kenya,-1.318886,36.928233,5330,4117,45,asphalt,RNAV,0,1,basic,1,basic,1,0,1,1,1,1,1,open,none,safe,civil,0
+DGAA,ACC,Kotoka International Airport,Accra,Ghana,5.60519,-0.166786,205,3403,61,asphalt,RNAV,0,0,none,1,basic,1,0,1,1,1,1,0,open,none,safe,civil,0
+GMMN,CMN,Mohammed V International Airport,Casablanca,Morocco,33.3675,-7.58997,656,3720,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+VIDP,DEL,Indira Gandhi International Airport,New Delhi,India,28.55563,77.09519,777,4430,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+VABB,BOM,Chhatrapati Shivaji Maharaj International Airport,Mumbai,India,19.088699,72.867897,39,3509,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+ZBAA,PEK,Beijing Capital International Airport,Beijing,China,40.077349,116.596702,116,3810,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+ZSPD,PVG,Shanghai Pudong International Airport,Shanghai (Pudong),China,31.1434,121.805,13,4000,60,concrete,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+RJTT,HND,Tokyo Haneda International Airport,Tokyo,Japan,35.549678,139.786958,35,3360,61,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+RJAA,NRT,Narita International Airport,Narita,Japan,35.76858,140.388714,141,4000,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,0,1,1,1,open,none,safe,civil,1
+RKSI,ICN,Incheon International Airport,Seoul,"Korea, Republic of",37.469101,126.450996,23,4000,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+WSSS,SIN,Singapore Changi Airport,Singapore,Singapore,1.35019,103.994003,22,4000,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+VTBS,BKK,Suvarnabhumi Airport,Bangkok,Thailand,13.6811,100.747002,5,4000,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+WMKK,KUL,Kuala Lumpur International Airport,Sepang,Malaysia,2.74558,101.709999,69,4124,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+YSSY,SYD,Sydney Kingsford Smith International Airport,Sydney (Mascot),Australia,-33.946098,151.177002,21,3962,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,0,1,1,1,open,none,safe,civil,1
+YMML,MEL,Melbourne Airport,Melbourne,Australia,-37.670732,144.837898,434,3657,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+NZAA,AKL,Auckland International Airport,Auckland,New Zealand,-37.01199,174.786331,23,3635,45,concrete,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+BIKF,KEF,Keflavik International Airport,Reykjavík,Iceland,63.985001,-22.6056,171,3065,60,asphalt,RNAV,0,1,basic,1,basic,1,0,1,1,1,1,1,open,none,safe,joint,0
+DAAG,ALG,Houari Boumediene Airport,Algiers,Algeria,36.693886,3.214531,82,3500,60,asphalt,RNAV,0,1,basic,1,basic,1,1,1,1,1,1,0,open,none,safe,civil,0
+DNAA,ABV,Nnamdi Azikiwe International Airport,Abuja,Nigeria,9.00679,7.26317,1123,3609,60,asphalt,RNAV,0,0,none,1,basic,1,0,1,1,1,1,1,open,none,safe,joint,0
+DNMM,LOS,Murtala Muhammed International Airport,Lagos,Nigeria,6.57737,3.32116,135,3900,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,caution,civil,0
+DRRN,NIM,Diori Hamani International Airport,Niamey,Niger,13.4815,2.18361,732,3200,30,asphalt ,VOR,0,0,none,0,none,0,0,1,1,1,1,0,closed,restricted,caution,joint,0
+DTTA,TUN,Tunis Carthage International Airport,Tunis,Tunisia,36.851002,10.2272,22,3200,45,asphalt,RNAV,0,1,basic,1,basic,1,0,1,1,1,1,1,open,none,safe,civil,0
+EFHK,HEL,Helsinki Vantaa Airport,Helsinki (Vantaa),Finland,60.318363,24.963341,179,3440,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+EIDW,DUB,Dublin Airport,Dublin,Ireland,53.428713,-6.262121,242,3110,45,concrete,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+ENGM,OSL,Oslo-Gardermoen International Airport,Oslo (Gardermoen),Norway,60.193901,11.1004,681,3600,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+ESSA,ARN,Stockholm-Arlanda Airport,Stockholm,Sweden,59.64849,17.928829,137,3301,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+FACT,CPT,Cape Town International Airport,Cape Town,South Africa,-33.97403,18.604333,151,3201,61,asphalt,RNAV,0,1,basic,1,basic,1,0,1,1,1,1,1,open,none,safe,civil,0
+FMMI,TNR,Ivato International Airport,Antananarivo,Madagascar,-18.7969,47.478802,4198,3100,45,asphalt,VOR,0,0,none,0,none,0,0,1,1,1,1,0,open,none,caution,civil,0
+HAAB,ADD,Addis Ababa Bole International Airport,Addis Ababa,Ethiopia,8.97789,38.799301,7630,3800,45,asphalt,ILS,1,0,none,1,basic,1,0,1,1,1,1,1,open,restricted,caution,joint,0
+HLLM,MJI,Mitiga International Airport,Tripoli,Libya,32.89177,13.287878,36,3400,45,asphalt,VOR,0,0,none,0,none,0,0,1,1,1,1,0,temporary_closed,military_restricted,unsafe,joint,0
+LGAV,ATH,Athens Eleftherios Venizelos International Airport,Spata-Artemida,Greece,37.936401,23.9445,308,4000,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+LPPT,LIS,Lisbon Humberto Delgado Airport,Lisbon,Portugal,38.7813,-9.13592,374,3707,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+LTAC,ESB,Esenboğa International Airport,Ankara,Türkiye,40.128101,32.995098,3125,3750,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,joint,0
+LTFM,IST,İstanbul Airport,Istanbul,Türkiye,41.274874,28.732136,325,4100,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,0,open,none,safe,civil,0
+OIIE,IKA,Imam Khomeini International Airport,Tehran,"Iran, Islamic Republic of",35.4161,51.152199,3305,4198,45,asphalt,RNAV,0,1,basic,1,basic,1,1,1,1,1,1,1,temporary_closed,restricted,caution,civil,0
+OIMM,MHD,Mashhad International Airport,Mashhad,"Iran, Islamic Republic of",36.234821,59.642949,3263,3925,45,asphalt,VOR,0,0,none,1,basic,1,0,1,1,1,1,1,temporary_closed,restricted,safe,civil,0
+OJAI,AMM,Queen Alia International Airport,Amman,Jordan,31.722601,35.993198,2395,3660,61,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OLBA,BEY,Beirut Rafic Hariri International Airport,Beirut,Lebanon,33.819833,35.487443,87,3800,45,concrete,RNAV,0,1,basic,1,basic,1,0,1,1,1,1,1,temporary_closed,none,caution,civil,0
+OOMS,MCT,Muscat International Airport,Muscat/Seeb,Oman,23.600218,58.285268,48,4080,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OPKC,KHI,Jinnah International Airport,Karachi,Pakistan,24.9065,67.160797,100,3400,46,concrete,RNAV,0,1,basic,1,basic,1,1,1,1,1,1,1,open,none,caution,civil,0
+OPLA,LHE,Allama Iqbal International Airport,Lahore,Pakistan,31.521601,74.403603,712,3360,46,concrete,RNAV,0,0,none,1,basic,1,0,1,1,1,1,1,open,none,caution,civil,0
+ORBI,BGW,Baghdad International Airport / New Al Muthana Air Base,Baghdad,Iraq,33.262501,44.2346,114,4000,60,concrete,RNAV,0,0,none,0,none,0,0,1,1,1,1,1,open,military_restricted,unsafe,joint,0
+ORER,EBL,Erbil International Airport,Arbil,Iraq,36.236047,43.946615,1341,4800,75,concrete,VOR,0,0,none,0,none,0,0,1,1,1,1,0,temporary_closed,military_restricted,unsafe,joint,0
+RCTP,TPE,Taiwan Taoyuan International Airport,Taoyuan,"Taiwan, Province of China",25.0777,121.233002,106,3660,60,concrete,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+RJCC,CTS,New Chitose Airport,Sapporo,Japan,42.774753,141.690414,82,3000,61,asphalt,RNAV,0,1,basic,1,basic,1,1,1,1,1,1,1,open,none,safe,joint,0
+RPLL,MNL,Ninoy Aquino International Airport,Manila (Pasay),Philippines,14.5086,121.019997,75,3737,60,concrete,ILS,1,1,basic,1,basic,1,1,1,1,1,1,1,open,none,caution,civil,0
+UAAA,ALA,Almaty International Airport,Almaty,Kazakhstan,43.354267,77.042828,2234,4500,45,asphalt,RNAV,0,1,basic,1,basic,1,1,1,1,1,1,1,open,none,safe,civil,0
+UACC,NQZ,Nursultan Nazarbayev International Airport,Astana,Kazakhstan,51.027035,71.467094,1165,3500,45,asphalt,RNAV,0,1,basic,1,basic,1,1,1,1,1,1,1,open,none,safe,civil,0
+UKBB,KBP,Boryspil International Airport,Boryspil,Ukraine,50.345001,30.894699,427,4000,60,concrete,ILS,1,1,basic,1,basic,1,1,1,1,1,1,1,closed,military_restricted,caution,military,0
+UKKK,IEV,Ihor Sikorsky Kyiv International Airport (Zhuliany),Kyiv,Ukraine,50.40194,30.45194,587,2310,45,concrete,VOR,0,0,none,0,none,0,0,1,1,1,1,1,closed,military_restricted,caution,civil,0
+ULLI,LED,Pulkovo Airport,St. Petersburg,Russian Federation,59.800301,30.262501,78,3780,60,concrete,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,caution,civil,0
+UUEE,SVO,Sheremetyevo International Airport,Moscow,Russian Federation,55.976858,37.41121,622,3700,60,concrete,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,caution,civil,0
+VNKT,KTM,Tribhuvan International Airport,Kathmandu,Nepal,27.6966,85.3591,4390,3350,45,asphalt,VOR,0,0,none,0,none,0,0,1,1,1,1,1,open,none,caution,civil,0
+ZKPY,FNJ,Pyongyang Sunan International Airport,Pyongyang,"Korea, Democratic People's Republic of",39.224098,125.669998,117,3502,70,concrete,VOR,0,0,none,0,none,0,0,1,1,1,1,0,open,military_restricted,unsafe,joint,0
+EGCC,MAN,Manchester Airport,Manchester,United Kingdom,53.353744,-2.274953,257,3048,46,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+LCLK,LCA,Larnaca International Airport,Larnaca,Cyprus,34.875099,33.624901,8,2987,45,asphalt,ILS,1,0,none,1,basic,1,0,1,1,1,1,1,open,none,safe,civil,0
+GAGO,GAQ,Gao Airport,Gao,Mali,16.2484,-0.005456,866,2400,45,asphalt,VOR,0,0,none,1,none,0,0,0,0,0,0,0,temporary_closed,military_restricted,unsafe,military,0
+UOOO,NSK,Norilsk Alykel Airport,Norilsk,Russian Federation,69.311096,87.332199,574,2800,45,concrete,VOR,0,0,none,1,basic,1,0,1,0,0,1,0,open,restricted,caution,joint,0
+DNKN,KAN,Mallam Aminu Kano International Airport,Kano,Nigeria,12.0476,8.52462,1562,3200,46,asphalt,RNAV,0,0,none,1,basic,1,0,1,0,0,1,1,open,none,safe,joint,0
+HKIS,ILU,Isiolo Airport,Isiolo,Kenya,0.338167,37.591667,3495,1524,30,asphalt,VOR,0,0,none,1,none,0,0,0,0,0,0,0,closed,none,caution,civil,0
+HELX,LXR,Luxor International Airport,Luxor,Egypt,25.671,32.7066,294,3000,45,asphalt,RNAV,0,0,none,1,basic,1,0,1,0,0,1,1,open,none,safe,joint,0
+WIMM,KNO,Kualanamu International Airport,Medan,Indonesia,3.641583,98.885233,23,3000,60,asphalt,RNAV,1,1,basic,1,basic,1,0,1,1,0,1,1,open,none,safe,civil,0
+VVNB,HAN,Noi Bai International Airport,Hanoi,Viet Nam,21.2212,105.8072,39,3800,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+WIII,CGK,Soekarno-Hatta International Airport,Jakarta,Indonesia,6.1256,106.6559,34,3660,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,1
+SKBO,BOG,El Dorado International Airport,Bogota,Colombia,4.7016,74.1469,2548,3800,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+HTDA,DAR,Julius Nyerere International Airport,Dar es Salaam,Tanzania,-6.8781,39.2026,182,3000,45,asphalt,ILS,1,1,basic,1,basic,1,1,1,1,1,1,1,open,none,safe,civil,0
+HRYR,KGL,Kigali International Airport,Kigali,Rwanda,-1.9686,30.1395,1490,3500,45,asphalt,ILS,1,1,basic,1,basic,1,1,1,1,1,1,1,open,none,safe,civil,0
+UTTT,TAS,Tashkent International Airport,Tashkent,Uzbekistan,41.2579,69.2812,489,3200,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OMSJ,SHJ,Sharjah International Airport,Sharjah,United Arab Emirates,25.3286,55.5172,111,4060,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OEJN,JED,King Abdulaziz International Airport,Jeddah,Saudi Arabia,21.6796,39.1565,48,4000,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OEDM,DMM,King Fahd International Airport,Dammam,Saudi Arabia,26.4712,49.7979,72,4000,60,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0
+OEMA,MED,Prince Mohammad Bin Abdulaziz Airport,Medina,Saudi Arabia,24.5534,39.7051,2080,3500,45,asphalt,ILS,1,1,advanced,1,major,1,1,1,1,1,1,1,open,none,safe,civil,0

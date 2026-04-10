@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-04-11T02:48:19.695753",
+  "log_mode": "compact",
+  "scenario": {
+    "emergency_type": "medical",
+    "aircraft_type": "A321",
+    "aircraft_category": "narrow_body",
+    "fuel_state": "low",
+    "aircraft_lat": 18.0,
+    "aircraft_lon": 120.3109,
+    "usable_range_km": 900.0,
+    "required_runway_m": 2700
+  },
+  "total_airports": 96,
+  "feasible_airports_count": 2,
+  "selected_option": {
+    "airport_icao": "RPLL",
+    "airport_name": "Ninoy Aquino International Airport",
+    "city": "Manila (Pasay)",
+    "country": "Philippines",
+    "score": 0.43461648416638765,
+    "distance_km": 395.53395137508636,
+    "runway_margin_m": 1037,
+    "distance_zone": "preferred",
+    "explanation": {
+      "airport_icao": "RPLL",
+      "feasibility_reasons": [
+        "Accepted: preferred range",
+        "Within preferred diversion range"
+      ],
+      "ranking_reasons": [
+        "Within reachable diversion range for the current scenario",
+        "Runway margin available: +1037 m",
+        "Medical capability available",
+        "Rescue capability available",
+        "Firefighting services available",
+        "Airport operates 24 hours"
+      ],
+      "summary": "Recommended because it offers sufficient runway, emergency support and medical capability.",
+      "caution": "Final diversion decision remains with the pilot."
+    }
+  },
+  "top_ranked": [
+    {
+      "airport_icao": "RPLL",
+      "airport_name": "Ninoy Aquino International Airport",
+      "city": "Manila (Pasay)",
+      "country": "Philippines",
+      "score": 0.43461648416638765,
+      "distance_km": 395.53395137508636,
+      "runway_margin_m": 1037,
+      "distance_zone": "preferred",
+      "summary": "Recommended because it offers sufficient runway, emergency support and medical capability."
+    },
+    {
+      "airport_icao": "RCTP",
+      "airport_name": "Taiwan Taoyuan International Airport",
+      "city": "Taoyuan",
+      "country": "Taiwan, Province of China",
+      "score": 0.005684582413103248,
+      "distance_km": 792.7514309251195,
+      "runway_margin_m": 960,
+      "distance_zone": "preferred",
+      "summary": "Recommended because it offers sufficient runway, emergency support and medical capability."
+    }
+  ]
+}

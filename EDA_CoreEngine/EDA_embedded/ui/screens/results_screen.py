@@ -1,10 +1,6 @@
 """
 results_screen.py  —  EDA 
 
-Fixes:
-- Cancel button is now red
-- Airport name wraps properly when long
-- Distance shown in NM
 """
 
 from __future__ import annotations
@@ -14,8 +10,8 @@ from PySide6.QtWidgets import (
     QLabel, QPushButton, QDialog, QFrame,
 )
 from PySide6.QtCore import Signal, Qt
-from eda.models import DecisionReport
-from eda.explanation import Explanation
+from core.models import DecisionReport
+from core.explanation import Explanation
 from ui.theme import Colour, Font, Spacing
 from ui.widgets.result_card import ResultCard
 

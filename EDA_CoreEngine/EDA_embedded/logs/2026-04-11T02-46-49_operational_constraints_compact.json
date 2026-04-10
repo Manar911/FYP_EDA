@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-04-11T02:46:49.198252",
+  "log_mode": "compact",
+  "scenario": {
+    "emergency_type": "operational_constraints",
+    "aircraft_type": "A320",
+    "aircraft_category": "narrow_body",
+    "fuel_state": "normal",
+    "aircraft_lat": 26.2708,
+    "aircraft_lon": 50.6336,
+    "usable_range_km": 950.0,
+    "required_runway_m": 2600
+  },
+  "total_airports": 96,
+  "feasible_airports_count": 9,
+  "selected_option": {
+    "airport_icao": "OEDM",
+    "airport_name": "King Fahd International Airport",
+    "city": "Dammam",
+    "country": "Saudi Arabia",
+    "score": 0.9972066599669669,
+    "distance_km": 86.18577046624159,
+    "runway_margin_m": 1400,
+    "distance_zone": "preferred",
+    "explanation": {
+      "airport_icao": "OEDM",
+      "feasibility_reasons": [
+        "Accepted: preferred range",
+        "Within preferred diversion range"
+      ],
+      "ranking_reasons": [
+        "Relatively close diversion option",
+        "Runway margin available: +1400 m",
+        "Major rescue capability available",
+        "Firefighting services available",
+        "Airport operates 24 hours"
+      ],
+      "summary": "Recommended because it offers sufficient runway, acceptable proximity and emergency support.",
+      "caution": "Final diversion decision remains with the pilot."
+    }
+  },
+  "top_ranked": [
+    {
+      "airport_icao": "OEDM",
+      "airport_name": "King Fahd International Airport",
+      "city": "Dammam",
+      "country": "Saudi Arabia",
+      "score": 0.9972066599669669,
+      "distance_km": 86.18577046624159,
+      "runway_margin_m": 1400,
+      "distance_zone": "preferred",
+      "summary": "Recommended because it offers sufficient runway, acceptable proximity and emergency support."
+    },
+    {
+      "airport_icao": "OTHH",
+      "airport_name": "Hamad International Airport",
+      "city": "Doha",
+      "country": "Qatar",
+      "score": 0.2481872342542883,
+      "distance_km": 147.74760592624435,
+      "runway_margin_m": 2250,
+      "distance_zone": "preferred",
+      "summary": "Recommended because it offers sufficient runway, acceptable proximity and emergency support."
+    },
+    {
+      "airport_icao": "OKKK",
+      "airport_name": "Kuwait International Airport",
+      "city": "Kuwait City",
+      "country": "Kuwait",
+      "score": 0.006427974749429727,
+      "distance_km": 420.1853033384963,
+      "runway_margin_m": 1980,
+      "distance_zone": "preferred",
+      "summary": "Recommended because it offers sufficient runway and emergency support."
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-04-11T02:47:57.824184",
+  "log_mode": "compact",
+  "scenario": {
+    "emergency_type": "mechanical",
+    "aircraft_type": "A330-300",
+    "aircraft_category": "wide_body",
+    "fuel_state": "normal",
+    "aircraft_lat": 15.6,
+    "aircraft_lon": 83.0052,
+    "usable_range_km": 1300.0,
+    "required_runway_m": 3300
+  },
+  "total_airports": 96,
+  "feasible_airports_count": 4,
+  "selected_option": {
+    "airport_icao": "VABB",
+    "airport_name": "Chhatrapati Shivaji Maharaj International Airport",
+    "city": "Mumbai",
+    "country": "India",
+    "score": 0.7551205577183088,
+    "distance_km": 1143.4376836757722,
+    "runway_margin_m": 209,
+    "distance_zone": "preferred",
+    "explanation": {
+      "airport_icao": "VABB",
+      "feasibility_reasons": [
+        "Accepted: preferred range",
+        "Within preferred diversion range"
+      ],
+      "ranking_reasons": [
+        "Within reachable diversion range for the current scenario",
+        "Runway margin available: +209 m",
+        "Maintenance capability available",
+        "Major rescue capability available",
+        "Firefighting services available",
+        "Airport operates 24 hours"
+      ],
+      "summary": "Recommended because it offers sufficient runway, emergency support and maintenance support.",
+      "caution": "Final diversion decision remains with the pilot."
+    }
+  },
+  "top_ranked": [
+    {
+      "airport_icao": "VABB",
+      "airport_name": "Chhatrapati Shivaji Maharaj International Airport",
+      "city": "Mumbai",
+      "country": "India",
+      "score": 0.7551205577183088,
+      "distance_km": 1143.4376836757722,
+      "runway_margin_m": 209,
+      "distance_zone": "preferred",
+      "summary": "Recommended because it offers sufficient runway, emergency support and maintenance support."
+    },
+    {
+      "airport_icao": "VIDP",
+      "airport_name": "Indira Gandhi International Airport",
+      "city": "New Delhi",
+      "country": "India",
+      "score": 0.01382794188388655,
+      "distance_km": 1563.2560659543954,
+      "runway_margin_m": 1130,
+      "distance_zone": "extended",
+      "summary": "Recommended because it offers sufficient runway, emergency support and maintenance support."
+    },
+    {
+      "airport_icao": "SKBO",
+      "airport_name": "El Dorado International Airport",
+      "city": "Bogota",
+      "country": "Colombia",
+      "score": 0.0044660404466964196,
+      "distance_km": 1550.963902143245,
+      "runway_margin_m": 500,
+      "distance_zone": "extended",
+      "summary": "Recommended because it offers sufficient runway, emergency support and maintenance support."
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-04-11T02:48:26.595699",
+  "log_mode": "compact",
+  "scenario": {
+    "emergency_type": "medical",
+    "aircraft_type": "A321",
+    "aircraft_category": "narrow_body",
+    "fuel_state": "low",
+    "aircraft_lat": -32.4,
+    "aircraft_lon": -68.5492,
+    "usable_range_km": 900.0,
+    "required_runway_m": 2700
+  },
+  "total_airports": 96,
+  "feasible_airports_count": 1,
+  "selected_option": {
+    "airport_icao": "SAEZ",
+    "airport_name": "Ezeiza International Airport - Ministro Pistarini",
+    "city": "Buenos Aires (Ezeiza)",
+    "country": "Argentina",
+    "score": 0.45978213310118204,
+    "distance_km": 965.1088128265477,
+    "runway_margin_m": 600,
+    "distance_zone": "extended",
+    "explanation": {
+      "airport_icao": "SAEZ",
+      "feasibility_reasons": [
+        "Accepted: extended range",
+        "Within extended diversion range as a fallback option"
+      ],
+      "ranking_reasons": [
+        "Within reachable diversion range for the current scenario",
+        "Runway margin available: +600 m",
+        "Medical capability available",
+        "Major rescue capability available",
+        "Firefighting services available",
+        "Airport operates 24 hours"
+      ],
+      "summary": "Recommended because it offers sufficient runway, emergency support and medical capability.",
+      "caution": "Final diversion decision remains with the pilot."
+    }
+  },
+  "top_ranked": [
+    {
+      "airport_icao": "SAEZ",
+      "airport_name": "Ezeiza International Airport - Ministro Pistarini",
+      "city": "Buenos Aires (Ezeiza)",
+      "country": "Argentina",
+      "score": 0.45978213310118204,
+      "distance_km": 965.1088128265477,
+      "runway_margin_m": 600,
+      "distance_zone": "extended",
+      "summary": "Recommended because it offers sufficient runway, emergency support and medical capability."
+    }
+  ]
+}

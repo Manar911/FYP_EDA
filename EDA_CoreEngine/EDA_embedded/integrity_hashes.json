@@ -1,0 +1,12 @@
+{
+  "airports_csv": {
+    "path": "core\\data\\airports.csv",
+    "sha256": "9db1e02fc766a8db7e7725fdacd63a78664979a5b7cc01b709340a72c18e6e06",
+    "size": 16250
+  },
+  "lightgbm_model": {
+    "path": "model\\lightgbm_pipeline.joblib",
+    "sha256": "92dcc4e25a4e37d9b73ee4aed2e02623ce9f64ac6cf1c1d2a40b4814eb331113",
+    "size": 553510
+  }
+}

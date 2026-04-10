@@ -1,12 +1,5 @@
 """
 input_screen.py  —  EDA 
-
-Fixes:
-1. Map pointer accuracy — uses devicePixelRatio correction for Windows DPI scaling
-2. Footer (Reset + Run buttons) no longer cut off — layout restructured so
-   footer is always visible regardless of content height
-3. All sections sized to fit 1024x600 with no scrolling needed
-4. Removed addStretch() that was pushing content down unpredictably
 """
 
 from __future__ import annotations
@@ -19,8 +12,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, Qt, QTimer
 
-from eda.scenario import EmergencyType, FuelState
-from eda.scenario_builder import list_available_aircraft
+from scenario import EmergencyType, FuelState
+from scenario_builder import list_available_aircraft
 from ui.theme import Colour, Font, Spacing
 from ui.widgets.numpad_widget import NumpadWidget
 from ui.widgets.map_widget import MapWidget
@@ -48,7 +41,7 @@ class InputScreen(QWidget):
     run_requested  = Signal(str, float, float, object, object, list, list, list)
     logs_requested = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, use_ml: bool = True, integrity_ok: bool = True):
         super().__init__(parent)
         self._aircraft: str | None = None
         self._fuel: FuelState | None = None
@@ -59,10 +52,12 @@ class InputScreen(QWidget):
         self._fuel_btns: dict[FuelState, QPushButton] = {}
         self._emrg_btns: dict[EmergencyType, QPushButton] = {}
         self._excluded_icaos: list[str] = []
+        self._use_ml = use_ml
+        self._integrity_ok = integrity_ok
         self._setup_ui()
         self._start_clock()
 
-    # ── Clock ─────────────────────────────────────────────────────────────────
+    #  Clock 
 
     def _start_clock(self):
         self._clock_timer = QTimer()
@@ -74,21 +69,15 @@ class InputScreen(QWidget):
         now = datetime.now(timezone.utc)
         self._clock_label.setText(now.strftime("%d %b %Y    %H:%M:%S UTC"))
 
-    # ── Layout ────────────────────────────────────────────────────────────────
-    # Total height budget: 600px
-    #   Header:   52px
-    #   Content: 460px  (scroll area)
-    #   Footer:   88px
-    #   Total:   600px  ✓
+    #  Layout 
 
     def _setup_ui(self):
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
-
-        root.addWidget(self._build_header())   # 52px fixed
-        root.addWidget(self._build_body(), stretch=1)  # fills remaining
-        root.addWidget(self._build_footer())   # 88px fixed
+        root.addWidget(self._build_header())
+        root.addWidget(self._build_body(), stretch=1)
+        root.addWidget(self._build_footer())
 
     def _build_header(self):
         h = QWidget()
@@ -109,6 +98,34 @@ class InputScreen(QWidget):
         """)
         lay.addWidget(title, stretch=1)
 
+        #  ML / DET engine badge 
+        if self._use_ml:
+            badge_text   = "ML"
+            badge_colour = Colour.GREEN
+            badge_bg     = Colour.GREEN_BG
+            badge_border = Colour.GREEN_DIM
+        else:
+            badge_text   = "DET"
+            badge_colour = Colour.AMBER
+            badge_bg     = Colour.AMBER_BG
+            badge_border = Colour.AMBER_DIM
+
+        badge = QLabel(badge_text)
+        badge.setFixedSize(52, 28)
+        badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        badge.setStyleSheet(f"""
+            color: {badge_colour};
+            background-color: {badge_bg};
+            border: 1px solid {badge_border};
+            border-radius: 3px;
+            font-size: {Font.SZ_SM}px;
+            font-family: "{Font.MONO}", "Courier New";
+            font-weight: bold;
+        """)
+        lay.addWidget(badge)
+        lay.addSpacing(Spacing.SM)
+
+        # UTC clock
         self._clock_label = QLabel("")
         self._clock_label.setStyleSheet(f"""
             color: {Colour.TEXT_PRIMARY};
@@ -129,10 +146,6 @@ class InputScreen(QWidget):
         return h
 
     def _build_body(self):
-        """
-        Scrollable body — all content sections.
-        Vertical scrollbar only appears if content does not fit.
-        """
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -144,15 +157,12 @@ class InputScreen(QWidget):
         lay.setContentsMargins(Spacing.LG, Spacing.SM, Spacing.LG, Spacing.SM)
         lay.setSpacing(Spacing.SM)
 
-        # ── ACFT TYPE ────────────────────────────────────────
         lay.addWidget(self._section_label("ACFT TYPE"))
         lay.addWidget(self._build_aircraft_row())
         lay.addWidget(self._hdivider())
 
-        # ── EMERGENCY + FUEL (side by side) ──────────────────
         row1 = QHBoxLayout()
         row1.setSpacing(Spacing.LG)
-
         emrg_col = QVBoxLayout()
         emrg_col.setSpacing(Spacing.XS)
         emrg_col.addWidget(self._section_label("EMERGENCY TYPE"))
@@ -174,16 +184,13 @@ class InputScreen(QWidget):
         lay.addLayout(row1)
         lay.addWidget(self._hdivider())
 
-        # ── POSITION ─────────────────────────────────────────
         lay.addWidget(self._section_label("POSITION"))
         lay.addWidget(self._build_position_row(), stretch=1)
 
-        # ── OPERATIONAL CONSTRAINTS (hidden by default) ───────
         self._op_panel = self._build_op_panel()
         self._op_panel.setVisible(False)
         lay.addWidget(self._op_panel)
 
-        # No addStretch — let content fill naturally
         scroll.setWidget(body)
         return scroll
 
@@ -303,7 +310,7 @@ class InputScreen(QWidget):
                 QLineEdit:hover {{ border-color: {Colour.CYAN_DIM}; }}
             """)
             setattr(self, attr, field)
-            fld  = field
+            fld = field
             mn, mx, la = min_v, max_v, label
             field.mousePressEvent = lambda e, f=fld, la=la, mn=mn, mx=mx: \
                 self._open_numpad(la, f, mn, mx)
@@ -326,23 +333,11 @@ class InputScreen(QWidget):
         lay.setSpacing(Spacing.XS)
 
         title = QLabel("EXCLUDED AIRPORTS")
-        title.setStyleSheet(f"""
-            color: {Colour.CYAN};
-            font-size: {Font.SZ_BODY}px;
-            font-weight: bold;
-            background: transparent;
-        """)
+        title.setStyleSheet(f"color: {Colour.CYAN}; font-size: {Font.SZ_BODY}px; font-weight: bold; background: transparent;")
         lay.addWidget(title)
 
-        hint = QLabel(
-            "Add airport ICAO codes to exclude. "
-            "Only airports in the database are accepted."
-        )
-        hint.setStyleSheet(f"""
-            color: {Colour.TEXT_SECONDARY};
-            font-size: {Font.SZ_SM}px;
-            background: transparent;
-        """)
+        hint = QLabel("Add airport ICAO codes to exclude. Only airports in the database are accepted.")
+        hint.setStyleSheet(f"color: {Colour.TEXT_SECONDARY}; font-size: {Font.SZ_SM}px; background: transparent;")
         hint.setWordWrap(True)
         lay.addWidget(hint)
 
@@ -398,25 +393,14 @@ class InputScreen(QWidget):
         lay.addLayout(btn_row)
 
         self._op_warning = QLabel("")
-        self._op_warning.setStyleSheet(f"""
-            color: {Colour.AMBER};
-            font-size: {Font.SZ_SM}px;
-            background: transparent;
-        """)
+        self._op_warning.setStyleSheet(f"color: {Colour.AMBER}; font-size: {Font.SZ_SM}px; background: transparent;")
         lay.addWidget(self._op_warning)
         return panel
 
     def _build_footer(self):
-        """
-        Footer always visible — fixed 88px at bottom.
-        Never inside the scroll area.
-        """
         bar = QWidget()
         bar.setFixedHeight(88)
-        bar.setStyleSheet(f"""
-            background-color: {Colour.BG_HEADER};
-            border-top: 1px solid {Colour.BORDER};
-        """)
+        bar.setStyleSheet(f"background-color: {Colour.BG_HEADER}; border-top: 1px solid {Colour.BORDER};")
         lay = QHBoxLayout(bar)
         lay.setContentsMargins(Spacing.LG, Spacing.MD, Spacing.LG, Spacing.MD)
         lay.setSpacing(Spacing.MD)
@@ -462,14 +446,12 @@ class InputScreen(QWidget):
         lay.addWidget(self._run_btn, stretch=1)
         return bar
 
-    # ── Overlays ──────────────────────────────────────────────────────────────
+    #  Overlays 
 
     def _open_numpad(self, label, field, min_v, max_v):
         np = NumpadWidget(label, field.text(), min_v, max_v, self)
         np.setGeometry(0, 0, self.width(), self.height())
-        np.setStyleSheet(
-            f"NumpadWidget {{ background-color: rgba(14, 26, 36, 230); }}"
-        )
+        np.setStyleSheet(f"NumpadWidget {{ background-color: rgba(14, 26, 36, 230); }}")
 
         def accept(val):
             field.setText(val)
@@ -488,9 +470,7 @@ class InputScreen(QWidget):
     def _open_icao_keyboard(self):
         kb = ICAOKeyboard(self)
         kb.setGeometry(0, 0, self.width(), self.height())
-        kb.setStyleSheet(
-            f"ICAOKeyboard {{ background-color: rgba(14, 26, 36, 230); }}"
-        )
+        kb.setStyleSheet(f"ICAOKeyboard {{ background-color: rgba(14, 26, 36, 230); }}")
 
         def on_code(code):
             if code not in self._excluded_icaos:
@@ -508,14 +488,13 @@ class InputScreen(QWidget):
         self._excluded_icaos.clear()
         self._icao_list.clear()
 
-    # ── Selection ─────────────────────────────────────────────────────────────
+    #  Selection 
 
     def _sel_aircraft(self, ac):
         self._aircraft = ac
         for name, btn in self._acft_btns.items():
             btn.setStyleSheet(
-                self._selected_style() if name == ac
-                else self._unselected_style()
+                self._selected_style() if name == ac else self._unselected_style()
             )
 
     def _sel_fuel(self, state):
@@ -525,18 +504,15 @@ class InputScreen(QWidget):
         for s, btn in self._fuel_btns.items():
             _, c, d = FUEL_CFG[s]
             btn.setStyleSheet(
-                self._selected_style() if s == state
-                else self._fuel_unselected(c, d)
+                self._selected_style() if s == state else self._fuel_unselected(c, d)
             )
 
     def _sel_emergency(self, etype):
         self._emergency = etype
         for e, btn in self._emrg_btns.items():
             btn.setStyleSheet(
-                self._selected_style() if e == etype
-                else self._unselected_style()
+                self._selected_style() if e == etype else self._unselected_style()
             )
-
         is_fuel = etype == EmergencyType.FUEL
         nb = self._fuel_btns[FuelState.NORMAL]
         nb.setEnabled(not is_fuel)
@@ -545,10 +521,7 @@ class InputScreen(QWidget):
             for s, btn in self._fuel_btns.items():
                 _, c, d = FUEL_CFG[s]
                 btn.setStyleSheet(self._fuel_unselected(c, d))
-
-        self._op_panel.setVisible(
-            etype == EmergencyType.OPERATIONAL_CONSTRAINTS
-        )
+        self._op_panel.setVisible(etype == EmergencyType.OPERATIONAL_CONSTRAINTS)
 
     def _on_map_pos(self, lat, lon):
         self._lat, self._lon = lat, lon
@@ -560,7 +533,6 @@ class InputScreen(QWidget):
         self._fuel     = None
         self._emergency = None
         self._lat, self._lon = 26.2708, 50.6336
-
         for btn in self._acft_btns.values():
             btn.setStyleSheet(self._unselected_style())
         for state, btn in self._fuel_btns.items():
@@ -569,7 +541,6 @@ class InputScreen(QWidget):
             btn.setStyleSheet(self._fuel_unselected(c, d))
         for btn in self._emrg_btns.values():
             btn.setStyleSheet(self._unselected_style())
-
         self._lat_field.setText(str(self._lat))
         self._lon_field.setText(str(self._lon))
         self._map.set_position(self._lat, self._lon)
@@ -585,11 +556,8 @@ class InputScreen(QWidget):
             return self._flash("Select an emergency type")
         if (self._emergency == EmergencyType.OPERATIONAL_CONSTRAINTS
                 and not self._excluded_icaos):
-            self._op_warning.setText(
-                "Add at least one airport ICAO code to exclude"
-            )
+            self._op_warning.setText("Add at least one airport ICAO code to exclude")
             return
-
         self.run_requested.emit(
             self._aircraft, self._lat, self._lon,
             self._fuel, self._emergency,
@@ -605,7 +573,7 @@ class InputScreen(QWidget):
             self._run_btn.setEnabled(True),
         ))
 
-    # ── Styles ────────────────────────────────────────────────────────────────
+    #  Styles 
 
     def _selected_style(self) -> str:
         return f"""
