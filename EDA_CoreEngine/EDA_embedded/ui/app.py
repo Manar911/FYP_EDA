@@ -193,17 +193,31 @@ class EDAMainWindow(QMainWindow):
 
     def _on_confirmed(self, icao, report):
         try:
-            # Add to in-memory UI log
             log = decision_report_to_compact_dict(report)
+
+            confirmed_ranked = next(
+                (r for r in report.ranked_top if r.airport.icao == icao),
+                None,
+            )
+            if confirmed_ranked:
+                from logger import _build_explanation
+                best_explanation = _build_explanation(report, confirmed_ranked)
+                log["selected_option"] = {
+                    "airport_icao":    confirmed_ranked.airport.icao,
+                    "airport_name":    confirmed_ranked.airport.name,
+                    "city":            confirmed_ranked.airport.city,
+                    "country":         confirmed_ranked.airport.country,
+                    "score":           confirmed_ranked.score,
+                    "distance_km":     confirmed_ranked.features.distance_km,
+                    "runway_margin_m": confirmed_ranked.features.runway_margin_m,
+                    "distance_zone":   confirmed_ranked.distance_zone,
+                    "explanation":     best_explanation,
+                }
+
             log["confirmed_airport"] = icao
             self._logs_screen.add_entry(log)
+            save_decision_report_json(report, mode="compact", max_logs=200)
 
-            # Save to disk in EDA_embedded/logs/
-            save_decision_report_json(
-                report,
-                mode="compact",
-                max_logs=200,
-            )
         except Exception as exc:
             print(f"Logging error: {exc}")
 

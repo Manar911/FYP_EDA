@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-04-11T22:44:09.764349",
+  "log_mode": "compact",
+  "scenario": {
+    "emergency_type": "medical",
+    "aircraft_type": "A320",
+    "aircraft_category": "narrow_body",
+    "fuel_state": "normal",
+    "aircraft_lat": 26.2708,
+    "aircraft_lon": 50.6336,
+    "usable_range_km": 950.0,
+    "required_runway_m": 2600
+  },
+  "total_airports": 96,
+  "feasible_airports_count": 10,
+  "selected_option": {
+    "airport_icao": "OBBI",
+    "airport_name": "Bahrain International Airport",
+    "city": "Manama",
+    "country": "Bahrain",
+    "score": 0.9912235320053403,
+    "distance_km": 0.5605095642168396,
+    "runway_margin_m": 1356,
+    "distance_zone": "preferred",
+    "explanation": {
+      "airport_icao": "OBBI",
+      "feasibility_reasons": [
+        "Accepted: preferred range",
+        "Within preferred diversion range"
+      ],
+      "ranking_reasons": [
+        "Very close to the aircraft position",
+        "Runway margin available: +1356 m",
+        "Advanced medical capability available",
+        "Major rescue capability available",
+        "Firefighting services available",
+        "Airport operates 24 hours"
+      ],
+      "summary": "Recommended because it offers sufficient runway, acceptable proximity, emergency support and medical capability.",
+      "caution": "Final diversion decision remains with the pilot."
+    }
+  },
+  "top_ranked": [
+    {
+      "airport_icao": "OBBI",
+      "airport_name": "Bahrain International Airport",
+      "city": "Manama",
+      "country": "Bahrain",
+      "score": 0.9912235320053403,
+      "distance_km": 0.5605095642168396,
+      "runway_margin_m": 1356,
+      "distance_zone": "preferred",
+      "summary": "Recommended because it offers sufficient runway, acceptable proximity, emergency support and medical capability."
+    },
+    {
+      "airport_icao": "OEDM",
+      "airport_name": "King Fahd International Airport",
+      "city": "Dammam",
+      "country": "Saudi Arabia",
+      "score": 0.2323836311218546,
+      "distance_km": 86.18577046624159,
+      "runway_margin_m": 1400,
+      "distance_zone": "preferred",
+      "summary": "Recommended because it offers sufficient runway, acceptable proximity, emergency support and medical capability."
+    },
+    {
+      "airport_icao": "OTHH",
+      "airport_name": "Hamad International Airport",
+      "city": "Doha",
+      "country": "Qatar",
+      "score": 0.03160903068057049,
+      "distance_km": 147.74760592624435,
+      "runway_margin_m": 2250,
+      "distance_zone": "preferred",
+      "summary": "Recommended because it offers sufficient runway, acceptable proximity, emergency support and medical capability."
+    }
+  ]
+}
