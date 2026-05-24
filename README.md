@@ -150,23 +150,6 @@ Unsafe airports are rejected before recommendation
 SHA-256 integrity verification for critical files
 Deterministic fallback ranking if ML fails
 Pilot decision logging for traceability
-Repository Structure
-FYP_EDA/
-│
-├── EDA_CoreEngine/
-│   ├── scenario.py
-│   ├── validation.py
-│   ├── features.py
-│   ├── filter.py
-│   ├── ranking.py
-│   ├── explanation.py
-│   ├── pipeline.py
-│   ├── airport_db.py
-│   └── integrity.py
-│
-├── .gitignore
-└── README.md
-Project Status
 
 This project was developed as a Final Year Project prototype demonstrating the integration of:
 
