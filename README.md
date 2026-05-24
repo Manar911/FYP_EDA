@@ -1,6 +1,6 @@
 # EDA – Emergency Diversion Assistant
 
-## AI-Powered Emergency Airport Recommendation System
+## Embedded AI Decision Support System for Emergency Flight Diversions
 
 EDA (Emergency Diversion Assistant) is an embedded AI decision-support system designed to assist pilots during in-flight emergencies by recommending and ranking suitable diversion airports in real time.
 
