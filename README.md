@@ -72,6 +72,7 @@ If the machine learning model becomes unavailable, the system automatically fall
 
 # Core Pipeline
 
+```text
 Scenario Input
       ↓
 Validation
@@ -85,6 +86,7 @@ Airport Ranking
 Explainable Recommendations
       ↓
 Pilot Confirmation
+```
 
 Technologies Used
 Software
