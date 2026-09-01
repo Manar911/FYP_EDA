@@ -165,8 +165,6 @@ EDA is an academic prototype developed for educational and research purposes onl
 
 It is not certified for real-world aviation operation. Final flight decisions must always remain with qualified aviation professionals.
 
-## Manar Almosawi
 
-- BSc Software Engineering
-- British University of Bahrain
-- University of Salford
+
+
